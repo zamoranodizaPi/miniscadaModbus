@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Dispositivos</h1>
+  <a class="btn btn-primary" href="{{ url_for('device_new') }}">Nuevo dispositivo</a>
+</div>
+<div class="table-responsive">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>IP</th>
+        <th>Puerto</th>
+        <th>Unit ID</th>
+        <th>Intervalo</th>
+        <th>Activo</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for device in devices %}
+      <tr>
+        <td>{{ device.name }}</td>
+        <td>{{ device.ip }}</td>
+        <td>{{ device.port }}</td>
+        <td>{{ device.unit_id }}</td>
+        <td>{{ device.poll_interval }} s</td>
+        <td>{{ 'Sí' if device.enabled else 'No' }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('device_edit', device_id=device.id) }}">Editar</a>
+          <form method="post" action="{{ url_for('device_delete', device_id=device.id) }}" class="d-inline">
+            <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+Flask==3.1.0
+Flask-Login==0.6.3
+SQLAlchemy==2.0.38
+bcrypt==4.2.1
+pymodbus==3.8.6
+PyYAML==6.0.2
+gunicorn==23.0.0

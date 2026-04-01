@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    command: gunicorn -w 2 -b 0.0.0.0:8000 web.app:app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./instance:/app/instance
+      - ./config:/app/config
+    environment:
+      MINISCADA_SECRET_KEY: change-me
+  daemon:
+    build: .
+    command: python -m daemon.service
+    volumes:
+      - ./instance:/app/instance
+      - ./config:/app/config

@@ -1,0 +1,21 @@
+users:
+  - username: admin
+    password: admin
+    is_admin: true
+
+devices:
+  - name: demo-plc
+    ip: 192.168.1.100
+    port: 502
+    unit_id: 1
+    timeout: 3
+    poll_interval: 10
+    enabled: false
+    variables:
+      - name: temperatura
+        address: 0
+        function_code: holding_register
+        data_type: uint16
+        register_count: 1
+        scale: 0.1
+        offset: 0

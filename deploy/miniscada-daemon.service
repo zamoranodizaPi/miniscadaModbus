@@ -1,0 +1,13 @@
+[Unit]
+Description=Mini SCADA Modbus Poller
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/miniscadaModbus
+ExecStart=/opt/miniscadaModbus/.venv/bin/python -m daemon.service
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

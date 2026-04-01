@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-3">{{ 'Editar dispositivo' if device else 'Nuevo dispositivo' }}</h1>
+<form method="post" class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label">Nombre</label>
+    <input class="form-control" name="name" value="{{ device.name if device else '' }}" required>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">IP</label>
+    <input class="form-control" name="ip" value="{{ device.ip if device else '' }}" required>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Puerto</label>
+    <input class="form-control" name="port" type="number" value="{{ device.port if device else 502 }}" required>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Unit ID</label>
+    <input class="form-control" name="unit_id" type="number" value="{{ device.unit_id if device else 1 }}" required>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Timeout</label>
+    <input class="form-control" name="timeout" type="number" step="0.1" value="{{ device.timeout if device else 3 }}" required>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Intervalo de lectura</label>
+    <input class="form-control" name="poll_interval" type="number" value="{{ device.poll_interval if device else 10 }}" required>
+  </div>
+  <div class="col-12 form-check ms-2">
+    <input class="form-check-input" id="enabled" name="enabled" type="checkbox" {% if not device or device.enabled %}checked{% endif %}>
+    <label class="form-check-label" for="enabled">Activo</label>
+  </div>
+  <div class="col-12">
+    <button class="btn btn-primary" type="submit">Guardar</button>
+  </div>
+</form>
+{% endblock %}

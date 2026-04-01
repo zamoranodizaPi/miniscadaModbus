@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-3">Configuración</h1>
+<form method="post" class="row g-3">
+  <div class="col-md-4">
+    <label class="form-label">Intervalo por defecto</label>
+    <input class="form-control" name="default_poll_interval" type="number" value="{{ values.get('default_poll_interval', '10') }}" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Recarga daemon</label>
+    <input class="form-control" name="daemon_reload_interval" type="number" value="{{ values.get('daemon_reload_interval', '5') }}" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Nueva contraseña</label>
+    <input class="form-control" name="new_password" type="password">
+  </div>
+  <div class="col-12">
+    <button class="btn btn-primary" type="submit">Guardar</button>
+  </div>
+</form>
+{% endblock %}

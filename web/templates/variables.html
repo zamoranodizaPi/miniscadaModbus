@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Variables</h1>
+  <a class="btn btn-primary" href="{{ url_for('variable_new') }}">Nueva variable</a>
+</div>
+<div class="table-responsive">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Dispositivo</th>
+        <th>Dirección</th>
+        <th>Función</th>
+        <th>Tipo</th>
+        <th>Escala</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for variable in variables %}
+      <tr>
+        <td>{{ variable.name }}</td>
+        <td>{{ variable.device.name }}</td>
+        <td>{{ variable.address }}</td>
+        <td>{{ variable.function_code }}</td>
+        <td>{{ variable.data_type }}</td>
+        <td>{{ variable.scale }} / {{ variable.offset }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('variable_edit', variable_id=variable.id) }}">Editar</a>
+          <form method="post" action="{{ url_for('variable_delete', variable_id=variable.id) }}" class="d-inline">
+            <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

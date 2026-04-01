@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-3">{{ 'Editar variable' if variable else 'Nueva variable' }}</h1>
+<form method="post" class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label">Nombre</label>
+    <input class="form-control" name="name" value="{{ variable.name if variable else '' }}" required>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Dispositivo</label>
+    <select class="form-select" name="device_id" required>
+      {% for device in devices %}
+      <option value="{{ device.id }}" {% if variable and variable.device_id == device.id %}selected{% endif %}>{{ device.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Dirección</label>
+    <input class="form-control" name="address" type="number" value="{{ variable.address if variable else 0 }}" required>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Función</label>
+    <select class="form-select" name="function_code">
+      {% for option in ['coil', 'discrete_input', 'holding_register', 'input_register'] %}
+      <option value="{{ option }}" {% if variable and variable.function_code == option %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Tipo de dato</label>
+    <select class="form-select" name="data_type">
+      {% for option in ['int16', 'uint16', 'int32', 'uint32', 'float32', 'int64', 'uint64', 'float64'] %}
+      <option value="{{ option }}" {% if variable and variable.data_type == option %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Cantidad de registros</label>
+    <input class="form-control" name="register_count" type="number" value="{{ variable.register_count if variable else 1 }}" required>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Escala</label>
+    <input class="form-control" name="scale" type="number" step="any" value="{{ variable.scale if variable else 1 }}" required>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Offset</label>
+    <input class="form-control" name="offset" type="number" step="any" value="{{ variable.offset if variable else 0 }}" required>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Byte order</label>
+    <select class="form-select" name="byte_order">
+      {% for option in ['big', 'little'] %}
+      <option value="{{ option }}" {% if variable and variable.byte_order == option %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Word order</label>
+    <select class="form-select" name="word_order">
+      {% for option in ['big', 'little'] %}
+      <option value="{{ option }}" {% if variable and variable.word_order == option %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-12 form-check ms-2">
+    <input class="form-check-input" id="enabled" name="enabled" type="checkbox" {% if not variable or variable.enabled %}checked{% endif %}>
+    <label class="form-check-label" for="enabled">Activa</label>
+  </div>
+  <div class="col-12">
+    <button class="btn btn-primary" type="submit">Guardar</button>
+  </div>
+</form>
+{% endblock %}
