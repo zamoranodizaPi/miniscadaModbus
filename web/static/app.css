@@ -551,6 +551,15 @@ body.display-mode-light .navbar-brand {
   background: linear-gradient(135deg, color-mix(in srgb, var(--dashboard-accent-2) 26%, transparent), var(--dashboard-panel));
 }
 
+.selection-highlight.selection-plant {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--dashboard-accent) 30%, transparent), var(--dashboard-panel));
+}
+
+.selection-highlight.selection-device {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--dashboard-accent-2) 34%, transparent), var(--dashboard-panel));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--dashboard-accent-2) 35%, transparent), var(--shadow);
+}
+
 .kpi-energy-card {
   display: flex;
   flex-direction: column;
@@ -674,6 +683,17 @@ body.display-mode-light .btn-outline-light:hover {
   margin: 0 0 0.8rem;
   font-size: 0.98rem;
   font-weight: 700;
+}
+
+.panel-selection-meta {
+  margin: 0.3rem 0 0;
+  color: #97b4bc;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.selection-aggregate-label {
+  color: #8fdcae;
 }
 
 .side-data-panel {

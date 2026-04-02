@@ -208,7 +208,9 @@
 
       function updateFocusChart(snapshot) {
         const rows = snapshot.variable_series[activeVariable] || [];
-        document.getElementById("localSelectedDeviceTitle").textContent = selectedDeviceLabel();
+        const title = document.getElementById("localSelectedDeviceTitle");
+        title.textContent = selectedDeviceLabel();
+        title.classList.toggle("selection-aggregate-label", !selectedDeviceIds().length);
         document.getElementById("localActiveVariableTitle").textContent = variableLabels[activeVariable] || activeVariable;
         localFocusChart.data.labels = rows.map((row) => row.timestamp.slice(11, 16));
         localFocusChart.data.datasets[0].label = variableLabels[activeVariable] || activeVariable;

@@ -54,7 +54,7 @@
     </div>
 
     <div class="energy-grid selection-grid">
-      <article class="kpi-energy-card selection-highlight">
+      <article class="kpi-energy-card selection-highlight" id="selectionSummaryCard">
         <span>Selected Device</span>
         <strong data-selection="label">{{ snapshot.selection.label }}</strong>
         <small data-selection-unit="label">{{ snapshot.selection.device_count }} device(s)</small>
@@ -115,6 +115,7 @@
           <div>
             <p class="panel-kicker">Tabs</p>
             <h2 class="panel-title">Realtime and Historical Charts</h2>
+            <p class="panel-selection-meta" id="webChartSelectionMeta">{{ snapshot.selection.label }}</p>
           </div>
           <span class="panel-badge">Configurable</span>
         </div>
@@ -487,6 +488,7 @@
 
   function updateSelectionKpis(snapshot) {
     const selection = snapshot.selection || {};
+    const isPlantView = !selectedDeviceIds().length;
     const formats = {
       power_kw: formatMetric(selection.power_kw, "kW"),
       energy_kwh: formatMetric(selection.energy_kwh, "kWh"),
@@ -496,7 +498,14 @@
     const labelNode = document.querySelector('[data-selection="label"]');
     const labelUnitNode = document.querySelector('[data-selection-unit="label"]');
     if (labelNode) labelNode.textContent = selection.label || selectedDeviceLabel();
-    if (labelUnitNode) labelUnitNode.textContent = `${selection.device_count || 0} device(s)`;
+    if (labelUnitNode) labelUnitNode.textContent = isPlantView ? `Plant summary · ${selection.device_count || 0} device(s)` : `Device detail · ${selection.device_count || 0} device(s)`;
+    const chartMeta = document.getElementById("webChartSelectionMeta");
+    if (chartMeta) chartMeta.textContent = isPlantView ? "Plant overview" : (selection.label || selectedDeviceLabel());
+    const summaryCard = document.getElementById("selectionSummaryCard");
+    if (summaryCard) {
+      summaryCard.classList.toggle("selection-plant", isPlantView);
+      summaryCard.classList.toggle("selection-device", !isPlantView);
+    }
     Object.entries(formats).forEach(([key, formatted]) => {
       const node = document.querySelector(`[data-selection="${key}"]`);
       const unitNode = document.querySelector(`[data-selection-unit="${key}"]`);
