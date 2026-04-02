@@ -129,6 +129,10 @@ La web principal ahora expone un dashboard energético con:
 - Distribución energética por dispositivo.
 - Históricos filtrables por dispositivo, variable y rango de fechas.
 - Exportación CSV de históricos y reportes energéticos diarios/mensuales.
+- Modo “Energy Management Dashboard” con tabs de gráficas configurables.
+- Selección múltiple de dispositivos.
+- Esquemas de color `orange`, `blue`, `green`, `black` y `gray`, persistidos desde la interfaz.
+- Navegación optimizada para pantalla touch `1024x600` con scroll horizontal y vertical.
 
 ## API REST autenticada
 

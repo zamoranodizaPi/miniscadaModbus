@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+import json
 
 from sqlalchemy import Select, and_, desc, func, select
 
@@ -32,6 +33,13 @@ class HistoryFilters:
     end: datetime | None = None
 
 
+DEFAULT_DASHBOARD_PREFERENCES = {
+    "theme": "green",
+    "refresh_seconds": 10,
+    "visible_tabs": ["consumption", "sales", "sources", "costs"],
+}
+
+
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -46,7 +54,7 @@ def parse_date_range(start_value: str | None, end_value: str | None, default_day
     return start, end
 
 
-def latest_readings_stmt(device_id: int | None = None, variable_names: set[str] | None = None) -> Select:
+def latest_readings_stmt(device_ids: list[int] | None = None, variable_names: set[str] | None = None) -> Select:
     latest_ts = select(Reading.variable_id, func.max(Reading.timestamp).label("max_timestamp")).group_by(Reading.variable_id).subquery()
     stmt = (
         select(
@@ -70,25 +78,25 @@ def latest_readings_stmt(device_id: int | None = None, variable_names: set[str] 
         .where(Device.enabled.is_(True), Variable.enabled.is_(True))
         .order_by(Device.name, Variable.name)
     )
-    if device_id:
-        stmt = stmt.where(Device.id == device_id)
+    if device_ids:
+        stmt = stmt.where(Device.id.in_(device_ids))
     if variable_names:
         stmt = stmt.where(Variable.name.in_(sorted(variable_names)))
     return stmt
 
 
-def latest_readings_map(session, device_id: int | None = None) -> dict[int, dict[str, dict]]:
-    rows = session.execute(latest_readings_stmt(device_id=device_id)).mappings().all()
+def latest_readings_map(session, device_ids: list[int] | None = None) -> dict[int, dict[str, dict]]:
+    rows = session.execute(latest_readings_stmt(device_ids=device_ids)).mappings().all()
     result: dict[int, dict[str, dict]] = defaultdict(dict)
     for row in rows:
         result[row["device_id"]][row["variable_name"]] = dict(row)
     return result
 
 
-def build_dashboard_snapshot(session, device_id: int | None = None) -> dict:
-    metric_rows = session.execute(latest_readings_stmt(device_id=device_id)).mappings().all()
+def build_dashboard_snapshot(session, device_ids: list[int] | None = None) -> dict:
+    metric_rows = session.execute(latest_readings_stmt(device_ids=device_ids)).mappings().all()
     all_devices = session.scalars(select(Device).order_by(Device.name)).all()
-    devices = [device for device in all_devices if not device_id or device.id == device_id]
+    devices = [device for device in all_devices if not device_ids or device.id in device_ids]
 
     device_cards = []
     energy_breakdown = []
@@ -160,9 +168,15 @@ def build_dashboard_snapshot(session, device_id: int | None = None) -> dict:
                 }
             )
 
-    trend_series = build_power_timeseries(session, device_id=device_id, hours=3)
-    daily_rows = energy_aggregate(session, period="daily", device_id=device_id, limit=14)
-    monthly_rows = energy_aggregate(session, period="monthly", device_id=device_id, limit=12)
+    trend_series = build_power_timeseries(session, device_ids=device_ids, hours=3)
+    daily_rows = energy_aggregate(session, period="daily", device_ids=device_ids, limit=14)
+    monthly_rows = energy_aggregate(session, period="monthly", device_ids=device_ids, limit=12)
+    sales_series = build_sales_timeseries(session, device_ids=device_ids, days=14)
+    costs_series = build_cost_timeseries(session, device_ids=device_ids, days=14)
+    source_mix = build_source_mix(device_cards)
+    sector_mix = build_sector_mix(device_cards)
+    total_sales = round(sum(item["sales_amount"] for item in sales_series), 2)
+    avg_cost = round(sum(item["avg_cost"] for item in costs_series) / len(costs_series), 2) if costs_series else 0.0
 
     return {
         "kpis": {
@@ -179,10 +193,17 @@ def build_dashboard_snapshot(session, device_id: int | None = None) -> dict:
             "monthly_energy_kwh": round(sum(item["energy_kwh"] for item in monthly_rows if item["bucket"] == monthly_rows[-1]["bucket"]), 2)
             if monthly_rows
             else 0.0,
+            "total_consumption_kwh": round(total_energy, 2),
+            "total_sales_usd": total_sales,
+            "avg_production_cost_usd": avg_cost,
         },
         "devices": sorted(device_cards, key=lambda item: item["power_kw"], reverse=True),
         "energy_breakdown": sorted(energy_breakdown, key=lambda item: item["energy_kwh"], reverse=True),
         "trend": trend_series,
+        "sales_trend": sales_series,
+        "costs_trend": costs_series,
+        "source_mix": source_mix,
+        "sector_mix": sector_mix,
         "daily_energy": daily_rows,
         "monthly_energy": monthly_rows,
         "latest_rows": sorted(latest_rows, key=lambda item: item["timestamp"], reverse=True)[:24],
@@ -190,7 +211,7 @@ def build_dashboard_snapshot(session, device_id: int | None = None) -> dict:
     }
 
 
-def build_power_timeseries(session, device_id: int | None = None, hours: int = 3) -> list[dict]:
+def build_power_timeseries(session, device_ids: list[int] | None = None, hours: int = 3) -> list[dict]:
     since = utcnow() - timedelta(hours=hours)
     bucket = func.strftime("%Y-%m-%dT%H:%M:00", Reading.timestamp)
     stmt = (
@@ -206,8 +227,8 @@ def build_power_timeseries(session, device_id: int | None = None, hours: int = 3
         .group_by("bucket")
         .order_by("bucket")
     )
-    if device_id:
-        stmt = stmt.where(Device.id == device_id)
+    if device_ids:
+        stmt = stmt.where(Device.id.in_(device_ids))
     rows = session.execute(stmt).all()
     return [{"timestamp": bucket_value, "power_kw": round(float(power_kw or 0.0), 2)} for bucket_value, power_kw in rows]
 
@@ -215,7 +236,7 @@ def build_power_timeseries(session, device_id: int | None = None, hours: int = 3
 def energy_aggregate(
     session,
     period: str,
-    device_id: int | None = None,
+    device_ids: list[int] | None = None,
     start: datetime | None = None,
     end: datetime | None = None,
     limit: int | None = None,
@@ -242,8 +263,8 @@ def energy_aggregate(
         .group_by("bucket", Device.name)
         .order_by(desc("bucket"), Device.name)
     )
-    if device_id:
-        stmt = stmt.where(Device.id == device_id)
+    if device_ids:
+        stmt = stmt.where(Device.id.in_(device_ids))
     if limit:
         stmt = stmt.limit(limit * 16)
     rows = session.execute(stmt).all()
@@ -252,8 +273,8 @@ def energy_aggregate(
     return data
 
 
-def total_energy_summary(session, device_id: int | None = None) -> dict:
-    rows = session.execute(latest_readings_stmt(device_id=device_id, variable_names={ENERGY_VARIABLE})).mappings().all()
+def total_energy_summary(session, device_ids: list[int] | None = None) -> dict:
+    rows = session.execute(latest_readings_stmt(device_ids=device_ids, variable_names={ENERGY_VARIABLE})).mappings().all()
     total = sum(as_float(row["value"]) for row in rows)
     return {
         "total_energy_kwh": round(total, 2),
@@ -355,3 +376,56 @@ def as_float(value) -> float:
 
 def as_bool(value) -> bool:
     return bool(round(as_float(value)))
+
+
+def build_sales_timeseries(session, device_ids: list[int] | None = None, days: int = 14) -> list[dict]:
+    rows = energy_aggregate(session, period="daily", device_ids=device_ids, start=utcnow() - timedelta(days=days), end=utcnow(), limit=days)
+    grouped: dict[str, float] = defaultdict(float)
+    for row in rows:
+        grouped[row["bucket"]] += row["energy_kwh"] * 0.14
+    return [{"bucket": bucket, "sales_amount": round(value, 2)} for bucket, value in sorted(grouped.items())]
+
+
+def build_cost_timeseries(session, device_ids: list[int] | None = None, days: int = 14) -> list[dict]:
+    rows = energy_aggregate(session, period="daily", device_ids=device_ids, start=utcnow() - timedelta(days=days), end=utcnow(), limit=days)
+    grouped: dict[str, list[float]] = defaultdict(list)
+    for row in rows:
+        grouped[row["bucket"]].append(row["energy_kwh"] * 0.09)
+    return [{"bucket": bucket, "avg_cost": round(sum(values) / len(values), 2)} for bucket, values in sorted(grouped.items()) if values]
+
+
+def build_source_mix(device_cards: list[dict]) -> list[dict]:
+    mixes = {"Grid": 0.0, "Renewable": 0.0, "Backup": 0.0}
+    for device in device_cards:
+        power = device["power_kw"]
+        if "subestacion" in device["name"]:
+            mixes["Grid"] += power * 0.72
+            mixes["Renewable"] += power * 0.18
+            mixes["Backup"] += power * 0.10
+        else:
+            mixes["Grid"] += power * 0.81
+            mixes["Renewable"] += power * 0.12
+            mixes["Backup"] += power * 0.07
+    return [{"label": label, "value": round(value, 2)} for label, value in mixes.items()]
+
+
+def build_sector_mix(device_cards: list[dict]) -> list[dict]:
+    rows = []
+    for device in device_cards:
+        rows.append({"label": device["name"].replace("pm8000-", "").replace("-", " ").title(), "value": round(device["power_kw"], 2)})
+    return sorted(rows, key=lambda item: item["value"], reverse=True)
+
+
+def load_dashboard_preferences(session) -> dict:
+    from models.entities import Setting
+
+    row = session.scalar(select(Setting).where(Setting.key == "dashboard_preferences"))
+    if row is None:
+        return dict(DEFAULT_DASHBOARD_PREFERENCES)
+    try:
+        parsed = json.loads(row.value)
+    except json.JSONDecodeError:
+        return dict(DEFAULT_DASHBOARD_PREFERENCES)
+    merged = dict(DEFAULT_DASHBOARD_PREFERENCES)
+    merged.update({key: value for key, value in parsed.items() if key in merged})
+    return merged

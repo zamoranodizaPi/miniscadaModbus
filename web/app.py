@@ -19,6 +19,7 @@ from web.analytics import (
     energy_aggregate,
     export_history_csv,
     history_rows,
+    load_dashboard_preferences,
     parse_date_range,
     total_energy_summary,
     utcnow,
@@ -46,17 +47,19 @@ def create_app() -> Flask:
     @app.route("/")
     @login_required
     def index():
-        selected_device_id = get_optional_int(request.args.get("device_id"))
+        selected_device_ids = get_optional_int_list(request.args.getlist("device_id"))
         with session_scope() as session:
-            snapshot = build_dashboard_snapshot(session, device_id=selected_device_id)
+            snapshot = build_dashboard_snapshot(session, device_ids=selected_device_ids)
             devices = session.scalars(select(Device).order_by(Device.name)).all()
             variables = variable_inventory(session)
+            preferences = load_dashboard_preferences(session)
         return render_template(
             "dashboard.html",
             snapshot=snapshot,
             devices=devices,
             variables=variables,
-            selected_device_id=selected_device_id,
+            selected_device_ids=selected_device_ids,
+            preferences=preferences,
         )
 
     @app.route("/local")
@@ -65,6 +68,22 @@ def create_app() -> Flask:
         with session_scope() as session:
             snapshot = build_dashboard_snapshot(session)
         return render_template("local_dashboard.html", snapshot=snapshot)
+
+    @app.route("/api/dashboard/preferences", methods=["GET", "POST"])
+    @login_required
+    def api_dashboard_preferences():
+        with session_scope() as session:
+            if request.method == "POST":
+                payload = request.get_json(silent=True) or {}
+                current = load_dashboard_preferences(session)
+                current["theme"] = payload.get("theme", current["theme"])
+                current["refresh_seconds"] = int(payload.get("refresh_seconds", current["refresh_seconds"]))
+                visible_tabs = payload.get("visible_tabs", current["visible_tabs"])
+                if isinstance(visible_tabs, list) and visible_tabs:
+                    current["visible_tabs"] = visible_tabs
+                upsert_setting(session, "dashboard_preferences", json_dumps(current))
+                return jsonify(current)
+            return jsonify(load_dashboard_preferences(session))
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
@@ -223,7 +242,7 @@ def create_app() -> Flask:
             history = history_rows(session, filters, page=page, per_page=per_page)
             devices = device_inventory(session)
             variables = variable_inventory(session)
-            daily_summary = energy_aggregate(session, period="daily", device_id=device_id, start=start, end=end, limit=31)
+            daily_summary = energy_aggregate(session, period="daily", device_ids=[device_id] if device_id else None, start=start, end=end, limit=31)
 
         return render_template(
             "readings.html",
@@ -263,7 +282,7 @@ def create_app() -> Flask:
         device_id = get_optional_int(request.args.get("device_id"))
         start, end = parse_date_range(request.args.get("start"), request.args.get("end"), default_days=31)
         with session_scope() as session:
-            rows = energy_aggregate(session, period=period, device_id=device_id, start=start, end=end)
+            rows = energy_aggregate(session, period=period, device_ids=[device_id] if device_id else None, start=start, end=end)
 
         buffer = StringIO()
         buffer.write("period,device,energy_kwh\n")
@@ -277,9 +296,9 @@ def create_app() -> Flask:
     @app.route("/api/realtime")
     @login_required
     def api_realtime():
-        device_id = get_optional_int(request.args.get("device_id"))
+        device_ids = get_optional_int_list(request.args.getlist("device_id"))
         with session_scope() as session:
-            payload = build_dashboard_snapshot(session, device_id=device_id)
+            payload = build_dashboard_snapshot(session, device_ids=device_ids)
         return jsonify(payload)
 
     @app.route("/api/local/realtime")
@@ -320,27 +339,27 @@ def create_app() -> Flask:
     @app.route("/api/energy/daily")
     @login_required
     def api_energy_daily():
-        device_id = get_optional_int(request.args.get("device_id"))
+        device_ids = get_optional_int_list(request.args.getlist("device_id"))
         start, end = parse_date_range(request.args.get("start"), request.args.get("end"), default_days=14)
         with session_scope() as session:
-            payload = energy_aggregate(session, period="daily", device_id=device_id, start=start, end=end, limit=31)
+            payload = energy_aggregate(session, period="daily", device_ids=device_ids, start=start, end=end, limit=31)
         return jsonify(payload)
 
     @app.route("/api/energy/monthly")
     @login_required
     def api_energy_monthly():
-        device_id = get_optional_int(request.args.get("device_id"))
+        device_ids = get_optional_int_list(request.args.getlist("device_id"))
         start, end = parse_date_range(request.args.get("start"), request.args.get("end"), default_days=365)
         with session_scope() as session:
-            payload = energy_aggregate(session, period="monthly", device_id=device_id, start=start, end=end, limit=24)
+            payload = energy_aggregate(session, period="monthly", device_ids=device_ids, start=start, end=end, limit=24)
         return jsonify(payload)
 
     @app.route("/api/energy/total")
     @login_required
     def api_energy_total():
-        device_id = get_optional_int(request.args.get("device_id"))
+        device_ids = get_optional_int_list(request.args.getlist("device_id"))
         with session_scope() as session:
-            payload = total_energy_summary(session, device_id=device_id)
+            payload = total_energy_summary(session, device_ids=device_ids)
         return jsonify(payload)
 
     return app
@@ -383,6 +402,16 @@ def get_optional_int(value: str | None) -> int | None:
     if not value:
         return None
     return int(value)
+
+
+def get_optional_int_list(values: list[str]) -> list[int]:
+    return [int(value) for value in values if value]
+
+
+def json_dumps(payload: dict) -> str:
+    import json
+
+    return json.dumps(payload)
 
 
 def require_local_request() -> None:
