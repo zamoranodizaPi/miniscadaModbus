@@ -1,55 +1,134 @@
 {% extends "base.html" %}
+{% block title %}Históricos | Mini SCADA{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h3 mb-0">Lecturas</h1>
-  <a class="btn btn-outline-primary" href="{{ url_for('readings_export') }}">Exportar CSV</a>
-</div>
-<div class="card mb-4">
-  <div class="card-header">Resumen por variable</div>
-  <div class="table-responsive">
-    <table class="table table-striped mb-0">
-      <thead>
-        <tr>
-          <th>Variable</th>
-          <th>Cantidad</th>
-          <th>Última muestra</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for name, count, last_ts in trend_rows %}
-        <tr>
-          <td>{{ name }}</td>
-          <td>{{ count }}</td>
-          <td>{{ last_ts }}</td>
-        </tr>
+<section class="hero-panel mb-4 compact">
+  <p class="eyebrow mb-2">Histórico y reportes</p>
+  <h1 class="hero-title small">Consulta histórica, filtros operativos y exportación de reportes energéticos.</h1>
+</section>
+
+<section class="panel-card mb-4">
+  <form class="row g-3 align-items-end" method="get">
+    <div class="col-md-3">
+      <label class="form-label">Dispositivo</label>
+      <select class="form-select" name="device_id">
+        <option value="">Todos</option>
+        {% for device in devices %}
+        <option value="{{ device.id }}" {% if filters.device_id == device.id %}selected{% endif %}>{{ device.name }}</option>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-<div class="card">
-  <div class="card-header">Últimas 250 lecturas</div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped mb-0">
-      <thead>
-        <tr>
-          <th>Dispositivo</th>
-          <th>Variable</th>
-          <th>Valor</th>
-          <th>Timestamp</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for device_name, variable_name, value, timestamp in rows %}
-        <tr>
-          <td>{{ device_name }}</td>
-          <td>{{ variable_name }}</td>
-          <td>{{ value }}</td>
-          <td>{{ timestamp }}</td>
-        </tr>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Variable</label>
+      <select class="form-select" name="variable">
+        <option value="">Todas</option>
+        {% for variable in variables %}
+        <option value="{{ variable }}" {% if filters.variable == variable %}selected{% endif %}>{{ variable }}</option>
         {% endfor %}
-      </tbody>
-    </table>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Desde</label>
+      <input class="form-control" type="date" name="start" value="{{ filters.start }}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Hasta</label>
+      <input class="form-control" type="date" name="end" value="{{ filters.end }}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Filas</label>
+      <select class="form-select" name="per_page">
+        {% for option in [50, 100, 150, 250] %}
+        <option value="{{ option }}" {% if filters.per_page == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <button class="btn btn-accent" type="submit">Aplicar filtros</button>
+      <a class="btn btn-outline-light" href="{{ url_for('readings_export', device_id=filters.device_id, variable=filters.variable, start=filters.start, end=filters.end) }}">Exportar CSV</a>
+    </div>
+    <div class="col-md-8 text-md-end">
+      <a class="btn btn-outline-light" href="{{ url_for('energy_report_export', period='daily', device_id=filters.device_id, start=filters.start, end=filters.end) }}">Reporte diario</a>
+      <a class="btn btn-outline-light" href="{{ url_for('energy_report_export', period='monthly', device_id=filters.device_id, start=filters.start, end=filters.end) }}">Reporte mensual</a>
+    </div>
+  </form>
+</section>
+
+<section class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="panel-card h-100">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Resumen</p>
+          <h2 class="panel-title">Energía diaria por tablero</h2>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-dark table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Día</th>
+              <th>Dispositivo</th>
+              <th>kWh</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in daily_summary %}
+            <tr>
+              <td>{{ row.bucket }}</td>
+              <td>{{ row.device }}</td>
+              <td>{{ "%.2f"|format(row.energy_kwh) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
-</div>
+  <div class="col-lg-7">
+    <div class="panel-card h-100">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Detalle</p>
+          <h2 class="panel-title">Lecturas filtradas</h2>
+        </div>
+        <span class="panel-badge">{{ history.pagination.total }} registros</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Dispositivo</th>
+              <th>Variable</th>
+              <th>Valor</th>
+              <th>Raw</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in history.rows %}
+            <tr>
+              <td>{{ row.device }}</td>
+              <td>{{ row.variable }}</td>
+              <td>{{ row.value }}</td>
+              <td>{{ row.raw_value or '-' }}</td>
+              <td>{{ row.timestamp }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex justify-content-between align-items-center pt-3">
+        <span class="text-secondary">Página {{ history.pagination.page }} de {{ history.pagination.pages }}</span>
+        <div class="d-flex gap-2">
+          {% if history.pagination.page > 1 %}
+          <a class="btn btn-sm btn-outline-light" href="{{ url_for('readings', page=history.pagination.page - 1, per_page=filters.per_page, device_id=filters.device_id, variable=filters.variable, start=filters.start, end=filters.end) }}">Anterior</a>
+          {% endif %}
+          {% if history.pagination.page < history.pagination.pages %}
+          <a class="btn btn-sm btn-outline-light" href="{{ url_for('readings', page=history.pagination.page + 1, per_page=filters.per_page, device_id=filters.device_id, variable=filters.variable, start=filters.start, end=filters.end) }}">Siguiente</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 {% endblock %}

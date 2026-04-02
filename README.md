@@ -46,6 +46,28 @@ python -m backend.simulator_seed
 python -m simulator.pm8000_fleet
 ```
 
+## Dashboard Empresarial
+
+La web principal ahora expone un dashboard energético con:
+
+- KPIs de potencia, energía, voltaje y corriente promedio.
+- Tendencia de potencia en tiempo real con refresco automático.
+- Distribución energética por dispositivo.
+- Históricos filtrables por dispositivo, variable y rango de fechas.
+- Exportación CSV de históricos y reportes energéticos diarios/mensuales.
+
+## API REST autenticada
+
+Endpoints disponibles bajo sesión iniciada:
+
+- `GET /api/realtime`
+- `GET /api/devices`
+- `GET /api/variables`
+- `GET /api/history`
+- `GET /api/energy/daily`
+- `GET /api/energy/monthly`
+- `GET /api/energy/total`
+
 La primera ejecución crea `instance/miniscada.db` y carga `config/initial_config.yaml`.
 
 Credenciales iniciales:
@@ -71,8 +93,9 @@ Variables relevantes por entorno:
 - Polling continuo a múltiples equipos Modbus TCP.
 - Decodificación básica de `coil`, `discrete_input`, `holding_register` e `input_register`.
 - Registro de lecturas históricas.
-- Exportación CSV desde `/readings/export.csv`.
-- API JSON autenticada en `/api/readings/latest`.
+- Dashboard web tipo empresarial con Chart.js y actualización automática.
+- Exportación CSV desde `/readings/export.csv` y `/reports/energy.csv`.
+- API JSON autenticada para tiempo real, históricos y métricas energéticas.
 - Simulador local de 8 medidores PowerLogic PM8000 en `127.0.0.1:15020-15027`.
 - Logs JSON para integración con `journald` o colectores externos.
 - Dockerfile, `docker-compose.yml` y servicios `systemd`.

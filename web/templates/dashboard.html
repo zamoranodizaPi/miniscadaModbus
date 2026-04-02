@@ -1,85 +1,456 @@
 {% extends "base.html" %}
+{% block title %}Dashboard | Mini SCADA{% endblock %}
 {% block content %}
-<div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="card h-100">
-      <div class="card-body">
-        <div class="text-muted">Dispositivos</div>
-        <div class="display-6">{{ devices|length }}</div>
-      </div>
+<section class="hero-panel mb-4">
+  <div class="row align-items-end g-4">
+    <div class="col-lg-7">
+      <p class="eyebrow mb-2">Centro energético</p>
+      <h1 class="hero-title">Monitoreo empresarial de consumo, calidad de energía y estado operativo.</h1>
+      <p class="hero-copy mb-0">
+        Dashboard con métricas en tiempo real, tendencias históricas y distribución por tablero. Actualización automática cada 8 segundos.
+      </p>
+    </div>
+    <div class="col-lg-5">
+      <form class="filter-card row g-3" method="get">
+        <div class="col-md-8">
+          <label class="form-label">Dispositivo</label>
+          <select class="form-select" name="device_id">
+            <option value="">Todos los tableros</option>
+            {% for device in devices %}
+            <option value="{{ device.id }}" {% if selected_device_id == device.id %}selected{% endif %}>{{ device.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button class="btn btn-accent w-100" type="submit">Aplicar</button>
+        </div>
+      </form>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="card h-100">
-      <div class="card-body">
-        <div class="text-muted">Activos</div>
-        <div class="display-6">{{ devices|selectattr('enabled')|list|length }}</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card h-100">
-      <div class="card-body">
-        <div class="text-muted">Con error</div>
-        <div class="display-6">{{ devices|selectattr('last_error')|list|length }}</div>
-      </div>
-    </div>
-  </div>
-</div>
+</section>
 
-<div class="card mb-4">
-  <div class="card-header">Estado de dispositivos</div>
-  <div class="table-responsive">
-    <table class="table table-striped mb-0">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>IP</th>
-          <th>Unit ID</th>
-          <th>Intervalo</th>
-          <th>Última conexión</th>
-          <th>Error</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for device in devices %}
-        <tr>
-          <td>{{ device.name }}</td>
-          <td>{{ device.ip }}:{{ device.port }}</td>
-          <td>{{ device.unit_id }}</td>
-          <td>{{ device.poll_interval }} s</td>
-          <td>{{ device.last_seen_at or '-' }}</td>
-          <td>{{ device.last_error or 'OK' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<section class="row g-3 mb-4" id="kpiGrid">
+  <div class="col-sm-6 col-xl-3">
+    <article class="metric-card">
+      <span class="metric-label">Potencia actual</span>
+      <strong class="metric-value" data-kpi="total_power_kw">{{ "%.2f"|format(snapshot.kpis.total_power_kw) }}</strong>
+      <span class="metric-unit">kW total</span>
+    </article>
   </div>
-</div>
+  <div class="col-sm-6 col-xl-3">
+    <article class="metric-card">
+      <span class="metric-label">Energía total</span>
+      <strong class="metric-value" data-kpi="total_energy_kwh">{{ "%.2f"|format(snapshot.kpis.total_energy_kwh) }}</strong>
+      <span class="metric-unit">kWh histórico</span>
+    </article>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <article class="metric-card">
+      <span class="metric-label">Voltaje promedio</span>
+      <strong class="metric-value" data-kpi="avg_voltage_v">{{ "%.2f"|format(snapshot.kpis.avg_voltage_v) }}</strong>
+      <span class="metric-unit">V</span>
+    </article>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <article class="metric-card">
+      <span class="metric-label">Corriente promedio</span>
+      <strong class="metric-value" data-kpi="avg_current_a">{{ "%.2f"|format(snapshot.kpis.avg_current_a) }}</strong>
+      <span class="metric-unit">A</span>
+    </article>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <article class="metric-card secondary">
+      <span class="metric-label">Energía diaria</span>
+      <strong class="metric-value" data-kpi="daily_energy_kwh">{{ "%.2f"|format(snapshot.kpis.daily_energy_kwh) }}</strong>
+      <span class="metric-unit">kWh hoy</span>
+    </article>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <article class="metric-card secondary">
+      <span class="metric-label">Energía mensual</span>
+      <strong class="metric-value" data-kpi="monthly_energy_kwh">{{ "%.2f"|format(snapshot.kpis.monthly_energy_kwh) }}</strong>
+      <span class="metric-unit">kWh mes</span>
+    </article>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <article class="metric-card secondary">
+      <span class="metric-label">Equipos en línea</span>
+      <strong class="metric-value" data-kpi="online_devices">{{ snapshot.kpis.online_devices }}</strong>
+      <span class="metric-unit">de {{ snapshot.kpis.device_count }}</span>
+    </article>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <article class="metric-card secondary">
+      <span class="metric-label">Alertas activas</span>
+      <strong class="metric-value" data-kpi="active_alerts">{{ snapshot.kpis.active_alerts }}</strong>
+      <span class="metric-unit">requieren revisión</span>
+    </article>
+  </div>
+</section>
 
-<div class="card">
-  <div class="card-header">Lecturas recientes</div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped mb-0">
-      <thead>
-        <tr>
-          <th>Dispositivo</th>
-          <th>Variable</th>
-          <th>Valor</th>
-          <th>Timestamp</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for variable_name, device_name, value, timestamp in latest_rows %}
-        <tr>
-          <td>{{ device_name }}</td>
-          <td>{{ variable_name }}</td>
-          <td>{{ value }}</td>
-          <td>{{ timestamp }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<section class="row g-3 mb-4">
+  <div class="col-xl-8">
+    <div class="panel-card chart-panel h-100">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Tiempo real</p>
+          <h2 class="panel-title">Potencia agregada del sistema</h2>
+        </div>
+        <span class="panel-badge">Últimas 3 horas</span>
+      </div>
+      <canvas id="powerTrendChart" height="130"></canvas>
+    </div>
   </div>
-</div>
+  <div class="col-xl-4">
+    <div class="panel-card chart-panel h-100">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Distribución</p>
+          <h2 class="panel-title">Participación energética</h2>
+        </div>
+        <span class="panel-badge">Por tablero</span>
+      </div>
+      <canvas id="energyBreakdownChart" height="220"></canvas>
+    </div>
+  </div>
+</section>
+
+<section class="row g-3 mb-4">
+  <div class="col-lg-4">
+    <div class="panel-card h-100">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Indicador</p>
+          <h2 class="panel-title">Carga instantánea</h2>
+        </div>
+      </div>
+      <canvas id="loadGaugeChart" height="220"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="panel-card h-100">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Histórico</p>
+          <h2 class="panel-title">Energía diaria</h2>
+        </div>
+        <a class="btn btn-sm btn-outline-light" href="{{ url_for('energy_report_export', period='daily', device_id=selected_device_id) }}">CSV</a>
+      </div>
+      <canvas id="dailyEnergyChart" height="220"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="panel-card h-100">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Histórico</p>
+          <h2 class="panel-title">Energía mensual</h2>
+        </div>
+        <a class="btn btn-sm btn-outline-light" href="{{ url_for('energy_report_export', period='monthly', device_id=selected_device_id) }}">CSV</a>
+      </div>
+      <canvas id="monthlyEnergyChart" height="220"></canvas>
+    </div>
+  </div>
+</section>
+
+<section class="row g-3">
+  <div class="col-xl-7">
+    <div class="panel-card h-100">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Operación</p>
+          <h2 class="panel-title">Estado de tableros</h2>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0" id="deviceStatusTable">
+          <thead>
+            <tr>
+              <th>Equipo</th>
+              <th>Potencia</th>
+              <th>Energía</th>
+              <th>Voltaje</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for device in snapshot.devices %}
+            <tr>
+              <td>
+                <strong>{{ device.name }}</strong>
+                <div class="small text-secondary">{{ device.last_error or 'Sin fallas de comunicación' }}</div>
+              </td>
+              <td>{{ "%.2f"|format(device.power_kw) }} kW</td>
+              <td>{{ "%.2f"|format(device.energy_kwh) }} kWh</td>
+              <td>{{ "%.2f"|format(device.voltage_v) }} V</td>
+              <td>
+                {% if device.alarm %}
+                <span class="status-pill danger">Alarma</span>
+                {% elif device.maintenance %}
+                <span class="status-pill warning">Mantenimiento</span>
+                {% elif device.energized %}
+                <span class="status-pill success">Energizado</span>
+                {% else %}
+                <span class="status-pill muted">Detenido</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-5">
+    <div class="panel-card mb-3">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Alertas</p>
+          <h2 class="panel-title">Eventos activos</h2>
+        </div>
+      </div>
+      <div id="alertsList" class="stack-list">
+        {% if snapshot.alerts %}
+          {% for alert in snapshot.alerts %}
+          <div class="stack-item {{ alert.severity }}">
+            <strong>{{ alert.device }}</strong>
+            <span>{{ alert.message }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="stack-item success">
+            <strong>Sistema estable</strong>
+            <span>No hay alertas activas.</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="panel-card">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Muestras</p>
+          <h2 class="panel-title">Últimas lecturas</h2>
+        </div>
+      </div>
+      <div id="latestReadingsList" class="stack-list compact">
+        {% for row in snapshot.latest_rows %}
+        <div class="stack-item muted">
+          <strong>{{ row.device }} / {{ row.variable }}</strong>
+          <span>{{ row.value }} | {{ row.timestamp }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+{% block scripts %}
+<script>
+  const selectedDeviceId = {{ selected_device_id if selected_device_id else 'null' }};
+  const initialSnapshot = {{ snapshot|tojson }};
+  const palette = ["#5fd08d", "#22b8cf", "#b8e986", "#4dd0e1", "#9adf7f", "#52a7ff", "#7be495", "#7cc6fe"];
+
+  function aggregateSeries(rows) {
+    const grouped = new Map();
+    rows.forEach((row) => {
+      grouped.set(row.bucket, (grouped.get(row.bucket) || 0) + row.energy_kwh);
+    });
+    return Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }
+
+  function buildGaugeData(snapshot) {
+    const totalPower = snapshot.kpis.total_power_kw || 0;
+    const cap = Math.max(totalPower * 1.25, 100);
+    return [Math.min(totalPower, cap), Math.max(cap - totalPower, 0)];
+  }
+
+  const trendChart = new Chart(document.getElementById("powerTrendChart"), {
+    type: "line",
+    data: {
+      labels: initialSnapshot.trend.map((row) => row.timestamp.slice(11, 16)),
+      datasets: [{
+        label: "Potencia kW",
+        data: initialSnapshot.trend.map((row) => row.power_kw),
+        borderColor: "#5fd08d",
+        backgroundColor: "rgba(95, 208, 141, 0.16)",
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0
+      }]
+    },
+    options: chartOptions("kW")
+  });
+
+  const breakdownChart = new Chart(document.getElementById("energyBreakdownChart"), {
+    type: "doughnut",
+    data: {
+      labels: initialSnapshot.energy_breakdown.map((row) => row.device),
+      datasets: [{
+        data: initialSnapshot.energy_breakdown.map((row) => row.energy_kwh),
+        backgroundColor: palette,
+        borderWidth: 0
+      }]
+    },
+    options: pieOptions()
+  });
+
+  const gaugeChart = new Chart(document.getElementById("loadGaugeChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Carga", "Reserva"],
+      datasets: [{
+        data: buildGaugeData(initialSnapshot),
+        backgroundColor: ["#22b8cf", "rgba(255,255,255,0.08)"],
+        borderWidth: 0,
+        circumference: 180,
+        rotation: 270
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: "72%",
+      plugins: { legend: { display: false }, tooltip: { enabled: false } }
+    }
+  });
+
+  const dailyChart = new Chart(document.getElementById("dailyEnergyChart"), {
+    type: "bar",
+    data: {
+      labels: aggregateSeries(initialSnapshot.daily_energy).map((row) => row[0]),
+      datasets: [{
+        label: "kWh",
+        data: aggregateSeries(initialSnapshot.daily_energy).map((row) => row[1]),
+        backgroundColor: "#5fd08d",
+        borderRadius: 8
+      }]
+    },
+    options: chartOptions("kWh")
+  });
+
+  const monthlyChart = new Chart(document.getElementById("monthlyEnergyChart"), {
+    type: "bar",
+    data: {
+      labels: aggregateSeries(initialSnapshot.monthly_energy).map((row) => row[0]),
+      datasets: [{
+        label: "kWh",
+        data: aggregateSeries(initialSnapshot.monthly_energy).map((row) => row[1]),
+        backgroundColor: "#22b8cf",
+        borderRadius: 8
+      }]
+    },
+    options: chartOptions("kWh")
+  });
+
+  function chartOptions(unit) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: "#d7e6eb" } },
+        tooltip: { mode: "index", intersect: false }
+      },
+      scales: {
+        x: { ticks: { color: "#90a8b2" }, grid: { color: "rgba(255,255,255,0.05)" } },
+        y: {
+          ticks: { color: "#90a8b2", callback: (value) => `${value} ${unit}` },
+          grid: { color: "rgba(255,255,255,0.05)" }
+        }
+      }
+    };
+  }
+
+  function pieOptions() {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "bottom", labels: { color: "#d7e6eb", boxWidth: 12 } }
+      }
+    };
+  }
+
+  function renderTableDevices(devices) {
+    const tbody = document.querySelector("#deviceStatusTable tbody");
+    tbody.innerHTML = devices.map((device) => {
+      let status = '<span class="status-pill muted">Detenido</span>';
+      if (device.alarm) status = '<span class="status-pill danger">Alarma</span>';
+      else if (device.maintenance) status = '<span class="status-pill warning">Mantenimiento</span>';
+      else if (device.energized) status = '<span class="status-pill success">Energizado</span>';
+      return `
+        <tr>
+          <td><strong>${device.name}</strong><div class="small text-secondary">${device.last_error || "Sin fallas de comunicación"}</div></td>
+          <td>${device.power_kw.toFixed(2)} kW</td>
+          <td>${device.energy_kwh.toFixed(2)} kWh</td>
+          <td>${device.voltage_v.toFixed(2)} V</td>
+          <td>${status}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderStack(containerId, rows, emptyHtml) {
+    const container = document.getElementById(containerId);
+    if (!rows.length) {
+      container.innerHTML = emptyHtml;
+      return;
+    }
+    if (containerId === "alertsList") {
+      container.innerHTML = rows.map((row) => `
+        <div class="stack-item ${row.severity}">
+          <strong>${row.device}</strong>
+          <span>${row.message}</span>
+        </div>`).join("");
+      return;
+    }
+    container.innerHTML = rows.map((row) => `
+      <div class="stack-item muted">
+        <strong>${row.device} / ${row.variable}</strong>
+        <span>${row.value} | ${row.timestamp}</span>
+      </div>`).join("");
+  }
+
+  function updateSnapshot(snapshot) {
+    Object.entries(snapshot.kpis).forEach(([key, value]) => {
+      const node = document.querySelector(`[data-kpi="${key}"]`);
+      if (node) node.textContent = typeof value === "number" ? value.toFixed(2).replace(/\.00$/, "") : value;
+    });
+
+    trendChart.data.labels = snapshot.trend.map((row) => row.timestamp.slice(11, 16));
+    trendChart.data.datasets[0].data = snapshot.trend.map((row) => row.power_kw);
+    trendChart.update();
+
+    breakdownChart.data.labels = snapshot.energy_breakdown.map((row) => row.device);
+    breakdownChart.data.datasets[0].data = snapshot.energy_breakdown.map((row) => row.energy_kwh);
+    breakdownChart.update();
+
+    gaugeChart.data.datasets[0].data = buildGaugeData(snapshot);
+    gaugeChart.update();
+
+    const dailySeries = aggregateSeries(snapshot.daily_energy);
+    dailyChart.data.labels = dailySeries.map((row) => row[0]);
+    dailyChart.data.datasets[0].data = dailySeries.map((row) => row[1]);
+    dailyChart.update();
+
+    const monthlySeries = aggregateSeries(snapshot.monthly_energy);
+    monthlyChart.data.labels = monthlySeries.map((row) => row[0]);
+    monthlyChart.data.datasets[0].data = monthlySeries.map((row) => row[1]);
+    monthlyChart.update();
+
+    renderTableDevices(snapshot.devices);
+    renderStack("alertsList", snapshot.alerts, '<div class="stack-item success"><strong>Sistema estable</strong><span>No hay alertas activas.</span></div>');
+    renderStack("latestReadingsList", snapshot.latest_rows, '<div class="stack-item muted"><strong>Sin datos</strong><span>Aún no hay lecturas.</span></div>');
+  }
+
+  async function refreshRealtime() {
+    const params = new URLSearchParams();
+    if (selectedDeviceId) params.set("device_id", selectedDeviceId);
+    const response = await fetch(`/api/realtime?${params.toString()}`, { headers: { "X-Requested-With": "fetch" } });
+    if (!response.ok) return;
+    const payload = await response.json();
+    updateSnapshot(payload);
+  }
+
+  setInterval(refreshRealtime, 8000);
+</script>
 {% endblock %}

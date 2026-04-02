@@ -1,18 +1,30 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from io import StringIO
 
 from flask import Flask, flash, jsonify, make_response, redirect, render_template, request, url_for
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
-from sqlalchemy import desc, func, select
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from backend.bootstrap import bootstrap_from_config
 from backend.config import get_settings
 from backend.database import SessionLocal, session_scope
 from backend.security import hash_password, verify_password
-from models.entities import Device, Reading, Setting, User, Variable
+from models.entities import Device, Setting, User, Variable
+from web.analytics import (
+    HistoryFilters,
+    build_dashboard_snapshot,
+    energy_aggregate,
+    export_history_csv,
+    history_rows,
+    parse_date_range,
+    total_energy_summary,
+    utcnow,
+    variable_inventory,
+    device_inventory,
+)
 
 
 settings = get_settings()
@@ -29,26 +41,23 @@ def create_app() -> Flask:
 
     @app.context_processor
     def inject_now():
-        return {"now": datetime.now(timezone.utc)}
+        return {"now": utcnow()}
 
     @app.route("/")
     @login_required
     def index():
+        selected_device_id = get_optional_int(request.args.get("device_id"))
         with session_scope() as session:
+            snapshot = build_dashboard_snapshot(session, device_id=selected_device_id)
             devices = session.scalars(select(Device).order_by(Device.name)).all()
-            latest_rows = session.execute(
-                select(
-                    Variable.name,
-                    Device.name,
-                    Reading.value,
-                    Reading.timestamp,
-                )
-                .join(Reading.variable)
-                .join(Variable.device)
-                .order_by(desc(Reading.timestamp))
-                .limit(25)
-            ).all()
-        return render_template("dashboard.html", devices=devices, latest_rows=latest_rows)
+            variables = variable_inventory(session)
+        return render_template(
+            "dashboard.html",
+            snapshot=snapshot,
+            devices=devices,
+            variables=variables,
+            selected_device_id=selected_device_id,
+        )
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
@@ -186,82 +195,138 @@ def create_app() -> Flask:
                 flash("Configuración actualizada", "success")
                 return redirect(url_for("app_settings"))
             values = {
-                row.key: row.value for row in session.scalars(select(Setting).where(Setting.key.in_(["default_poll_interval", "daemon_reload_interval"]))).all()
+                row.key: row.value
+                for row in session.scalars(
+                    select(Setting).where(Setting.key.in_(["default_poll_interval", "daemon_reload_interval"]))
+                ).all()
             }
         return render_template("settings.html", values=values)
 
     @app.route("/readings")
     @login_required
     def readings():
-        since = datetime.now(timezone.utc) - timedelta(hours=12)
+        page = max(1, int(request.args.get("page", 1)))
+        per_page = min(250, max(25, int(request.args.get("per_page", 100))))
+        device_id = get_optional_int(request.args.get("device_id"))
+        variable_name = request.args.get("variable") or None
+        start, end = parse_date_range(request.args.get("start"), request.args.get("end"), default_days=2)
+        filters = HistoryFilters(device_id=device_id, variable_name=variable_name, start=start, end=end)
+
         with session_scope() as session:
-            rows = session.execute(
-                select(
-                    Device.name,
-                    Variable.name,
-                    Reading.value,
-                    Reading.timestamp,
-                )
-                .join(Reading.variable)
-                .join(Variable.device)
-                .where(Reading.timestamp >= since)
-                .order_by(desc(Reading.timestamp))
-                .limit(250)
-            ).all()
-            trend_rows = session.execute(
-                select(Variable.name, func.count(Reading.id), func.max(Reading.timestamp))
-                .join(Reading.variable)
-                .group_by(Variable.name)
-                .order_by(Variable.name)
-            ).all()
-        return render_template("readings.html", rows=rows, trend_rows=trend_rows)
+            history = history_rows(session, filters, page=page, per_page=per_page)
+            devices = device_inventory(session)
+            variables = variable_inventory(session)
+            daily_summary = energy_aggregate(session, period="daily", device_id=device_id, start=start, end=end, limit=31)
+
+        return render_template(
+            "readings.html",
+            history=history,
+            devices=devices,
+            variables=variables,
+            filters={
+                "device_id": device_id,
+                "variable": variable_name,
+                "start": start.date().isoformat(),
+                "end": (end.date() - timedelta(days=1)).isoformat(),
+                "per_page": per_page,
+            },
+            daily_summary=daily_summary,
+        )
 
     @app.route("/readings/export.csv")
     @login_required
     def readings_export():
-        since = datetime.now(timezone.utc) - timedelta(days=1)
+        device_id = get_optional_int(request.args.get("device_id"))
+        variable_name = request.args.get("variable") or None
+        start, end = parse_date_range(request.args.get("start"), request.args.get("end"), default_days=2)
+        filters = HistoryFilters(device_id=device_id, variable_name=variable_name, start=start, end=end)
+
         with session_scope() as session:
-            rows = session.execute(
-                select(Device.name, Variable.name, Reading.value, Reading.raw_value, Reading.timestamp)
-                .join(Reading.variable)
-                .join(Variable.device)
-                .where(Reading.timestamp >= since)
-                .order_by(desc(Reading.timestamp))
-            ).all()
+            csv_payload = export_history_csv(session, filters)
 
-        buffer = StringIO()
-        buffer.write("device,variable,value,raw_value,timestamp\n")
-        for device_name, variable_name, value, raw_value, timestamp in rows:
-            buffer.write(f"{device_name},{variable_name},{value},{raw_value or ''},{timestamp.isoformat()}\n")
-
-        response = make_response(buffer.getvalue())
+        response = make_response(csv_payload)
         response.headers["Content-Type"] = "text/csv"
         response.headers["Content-Disposition"] = "attachment; filename=readings.csv"
         return response
 
-    @app.route("/api/readings/latest")
+    @app.route("/reports/energy.csv")
     @login_required
-    def api_readings_latest():
-        limit = min(int(request.args.get("limit", 50)), 500)
+    def energy_report_export():
+        period = request.args.get("period", "daily")
+        device_id = get_optional_int(request.args.get("device_id"))
+        start, end = parse_date_range(request.args.get("start"), request.args.get("end"), default_days=31)
         with session_scope() as session:
-            rows = session.execute(
-                select(Device.name, Variable.name, Reading.value, Reading.raw_value, Reading.timestamp)
-                .join(Reading.variable)
-                .join(Variable.device)
-                .order_by(desc(Reading.timestamp))
-                .limit(limit)
-            ).all()
+            rows = energy_aggregate(session, period=period, device_id=device_id, start=start, end=end)
 
-        payload = [
-            {
-                "device": device_name,
-                "variable": variable_name,
-                "value": value,
-                "raw_value": raw_value,
-                "timestamp": timestamp.isoformat(),
-            }
-            for device_name, variable_name, value, raw_value, timestamp in rows
-        ]
+        buffer = StringIO()
+        buffer.write("period,device,energy_kwh\n")
+        for row in rows:
+            buffer.write(f"{row['bucket']},{row['device']},{row['energy_kwh']}\n")
+        response = make_response(buffer.getvalue())
+        response.headers["Content-Type"] = "text/csv"
+        response.headers["Content-Disposition"] = f"attachment; filename=energy_{period}.csv"
+        return response
+
+    @app.route("/api/realtime")
+    @login_required
+    def api_realtime():
+        device_id = get_optional_int(request.args.get("device_id"))
+        with session_scope() as session:
+            payload = build_dashboard_snapshot(session, device_id=device_id)
+        return jsonify(payload)
+
+    @app.route("/api/devices")
+    @login_required
+    def api_devices():
+        with session_scope() as session:
+            payload = device_inventory(session)
+        return jsonify(payload)
+
+    @app.route("/api/variables")
+    @login_required
+    def api_variables():
+        with session_scope() as session:
+            payload = variable_inventory(session)
+        return jsonify(payload)
+
+    @app.route("/api/history")
+    @login_required
+    def api_history():
+        page = max(1, int(request.args.get("page", 1)))
+        per_page = min(500, max(25, int(request.args.get("per_page", 100))))
+        device_id = get_optional_int(request.args.get("device_id"))
+        variable_name = request.args.get("variable") or None
+        start, end = parse_date_range(request.args.get("start"), request.args.get("end"), default_days=2)
+        filters = HistoryFilters(device_id=device_id, variable_name=variable_name, start=start, end=end)
+
+        with session_scope() as session:
+            payload = history_rows(session, filters, page=page, per_page=per_page)
+        return jsonify(payload)
+
+    @app.route("/api/energy/daily")
+    @login_required
+    def api_energy_daily():
+        device_id = get_optional_int(request.args.get("device_id"))
+        start, end = parse_date_range(request.args.get("start"), request.args.get("end"), default_days=14)
+        with session_scope() as session:
+            payload = energy_aggregate(session, period="daily", device_id=device_id, start=start, end=end, limit=31)
+        return jsonify(payload)
+
+    @app.route("/api/energy/monthly")
+    @login_required
+    def api_energy_monthly():
+        device_id = get_optional_int(request.args.get("device_id"))
+        start, end = parse_date_range(request.args.get("start"), request.args.get("end"), default_days=365)
+        with session_scope() as session:
+            payload = energy_aggregate(session, period="monthly", device_id=device_id, start=start, end=end, limit=24)
+        return jsonify(payload)
+
+    @app.route("/api/energy/total")
+    @login_required
+    def api_energy_total():
+        device_id = get_optional_int(request.args.get("device_id"))
+        with session_scope() as session:
+            payload = total_energy_summary(session, device_id=device_id)
         return jsonify(payload)
 
     return app
@@ -298,6 +363,12 @@ def get_setting_int(key: str, default: int) -> int:
         if row is None:
             return default
         return int(row.value)
+
+
+def get_optional_int(value: str | None) -> int | None:
+    if not value:
+        return None
+    return int(value)
 
 
 @login_manager.user_loader
