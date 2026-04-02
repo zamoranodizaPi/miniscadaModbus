@@ -1317,9 +1317,15 @@ body.display-mode-light .local-screen {
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
 }
 
+.local-focus-control {
+  justify-content: flex-start;
+  gap: 0.55rem;
+}
+
 .local-device-select {
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 42px;
   background: rgba(255, 255, 255, 0.04);
 }
 
