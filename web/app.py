@@ -33,6 +33,77 @@ settings = get_settings()
 login_manager = LoginManager()
 login_manager.login_view = "login"
 
+LOCALE_TEXTS = {
+    "en": {
+        "all_devices": "All Devices",
+        "selected_devices": "Selected Devices",
+        "plant_summary": "Plant summary",
+        "device_detail": "Device detail",
+        "plant_overview": "Plant overview",
+        "devices": "Devices",
+        "configured_signals": "Configured Signals",
+        "selection_context": "Selection Context",
+        "graphs_active": "graphs active",
+        "signals": "Signals",
+        "configured_measurements": "Configured Measurements",
+        "three_per_row": "3 per row",
+        "latest_readings": "Latest Readings",
+        "live": "Live",
+        "total_consumption": "Total Consumption",
+        "total_sales": "Total Sales",
+        "avg_production_costs": "Avg Production Costs",
+        "avg_voltage": "Avg Voltage",
+        "avg_current": "Avg Current",
+        "online_devices": "Online Devices",
+        "selected_device": "Selected Device",
+        "selected_power": "Selected Power",
+        "selected_energy": "Selected Energy",
+        "selected_voltage": "Selected Voltage",
+        "selected_current": "Selected Current",
+        "selected_alerts": "Selected Alerts",
+        "utilization": "utilization",
+        "focused_analysis": "Focused Analysis",
+        "hour_window": "hour window",
+        "export_csv": "Export CSV",
+        "terminal_log": "Terminal Log",
+        "all": "All",
+    },
+    "es": {
+        "all_devices": "Todos los equipos",
+        "selected_devices": "Equipos seleccionados",
+        "plant_summary": "Resumen de planta",
+        "device_detail": "Detalle de equipo",
+        "plant_overview": "Vista de planta",
+        "devices": "Equipos",
+        "configured_signals": "Senales configuradas",
+        "selection_context": "Contexto de seleccion",
+        "graphs_active": "graficas activas",
+        "signals": "Senales",
+        "configured_measurements": "Mediciones configuradas",
+        "three_per_row": "3 por fila",
+        "latest_readings": "Ultimas lecturas",
+        "live": "En vivo",
+        "total_consumption": "Consumo total",
+        "total_sales": "Ventas totales",
+        "avg_production_costs": "Costo promedio de produccion",
+        "avg_voltage": "Voltaje promedio",
+        "avg_current": "Corriente promedio",
+        "online_devices": "Equipos en linea",
+        "selected_device": "Equipo seleccionado",
+        "selected_power": "Potencia seleccionada",
+        "selected_energy": "Energia seleccionada",
+        "selected_voltage": "Voltaje seleccionado",
+        "selected_current": "Corriente seleccionada",
+        "selected_alerts": "Alertas seleccionadas",
+        "utilization": "utilizacion",
+        "focused_analysis": "Analisis enfocado",
+        "hour_window": "ventana de horas",
+        "export_csv": "Exportar CSV",
+        "terminal_log": "Log terminal",
+        "all": "Todos",
+    },
+}
+
 
 def create_app() -> Flask:
     app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -50,6 +121,7 @@ def create_app() -> Flask:
             "ui_preferences": preferences,
             "format_compact_value": format_compact_value,
             "format_compact_metric": format_compact_metric,
+            "get_locale_texts": get_locale_texts,
         }
 
     @app.route("/")
@@ -58,7 +130,7 @@ def create_app() -> Flask:
         selected_device_ids = get_optional_int_list(request.args.getlist("device_id"))
         with session_scope() as session:
             snapshot = build_dashboard_snapshot(session, device_ids=selected_device_ids)
-            devices = session.scalars(select(Device).order_by(Device.name)).all()
+            devices = session.scalars(select(Device).where(*is_device_online_expr()).order_by(Device.name)).all()
             variables = variable_inventory(session)
             preferences = load_dashboard_preferences(session)
         return render_template(
@@ -76,7 +148,7 @@ def create_app() -> Flask:
         selected_device_ids = get_optional_int_list(request.args.getlist("device_id"))
         with session_scope() as session:
             snapshot = build_dashboard_snapshot(session, device_ids=selected_device_ids)
-            devices = session.scalars(select(Device).where(Device.enabled.is_(True)).order_by(Device.name)).all()
+            devices = session.scalars(select(Device).where(*is_device_online_expr()).order_by(Device.name)).all()
             preferences = load_dashboard_preferences(session)
         return render_template("local_dashboard.html", snapshot=snapshot, devices=devices, selected_device_ids=selected_device_ids, kiosk_tabs=KIOSK_VARIABLE_TABS, preferences=preferences)
 
@@ -89,9 +161,11 @@ def create_app() -> Flask:
                 current = load_dashboard_preferences(session)
                 current["theme"] = payload.get("theme", current["theme"])
                 current["mode"] = payload.get("mode", current["mode"])
+                current["language"] = payload.get("language", current["language"])
                 current["refresh_seconds"] = int(payload.get("refresh_seconds", current["refresh_seconds"]))
                 current["kiosk_theme"] = payload.get("kiosk_theme", current["kiosk_theme"])
                 current["kiosk_mode"] = payload.get("kiosk_mode", current["kiosk_mode"])
+                current["kiosk_language"] = payload.get("kiosk_language", current["kiosk_language"])
                 visible_tabs = payload.get("visible_tabs", current["visible_tabs"])
                 if isinstance(visible_tabs, list) and visible_tabs:
                     current["visible_tabs"] = visible_tabs
@@ -277,9 +351,11 @@ def create_app() -> Flask:
                 upsert_setting(session, "daemon_reload_interval", request.form["daemon_reload_interval"])
                 dashboard_preferences["theme"] = request.form.get("dashboard_theme", dashboard_preferences["theme"])
                 dashboard_preferences["mode"] = request.form.get("dashboard_mode", dashboard_preferences["mode"])
+                dashboard_preferences["language"] = request.form.get("dashboard_language", dashboard_preferences["language"])
                 dashboard_preferences["refresh_seconds"] = int(request.form.get("dashboard_refresh_seconds", dashboard_preferences["refresh_seconds"]))
                 dashboard_preferences["kiosk_theme"] = request.form.get("kiosk_theme", dashboard_preferences["kiosk_theme"])
                 dashboard_preferences["kiosk_mode"] = request.form.get("kiosk_mode", dashboard_preferences["kiosk_mode"])
+                dashboard_preferences["kiosk_language"] = request.form.get("kiosk_language", dashboard_preferences["kiosk_language"])
                 chart_variables = []
                 for variable_name in variable_inventory(session):
                     chart_variables.append(
@@ -515,6 +591,14 @@ def require_local_request() -> None:
     remote_addr = request.remote_addr or ""
     if remote_addr not in {"127.0.0.1", "::1"}:
         abort(403)
+
+
+def get_locale_texts(language: str | None) -> dict:
+    return LOCALE_TEXTS.get(language or "en", LOCALE_TEXTS["en"])
+
+
+def is_device_online_expr():
+    return Device.enabled.is_(True), Device.last_error.is_(None), Device.last_seen_at.is_not(None)
 
 
 @login_manager.user_loader

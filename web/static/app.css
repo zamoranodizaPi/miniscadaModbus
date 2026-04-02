@@ -470,8 +470,8 @@ body.display-mode-light .navbar-brand {
 .energy-header-logo {
   display: none;
   width: 100%;
-  max-width: 288px;
-  max-height: 106px;
+  max-width: 432px;
+  max-height: 160px;
   object-fit: contain;
 }
 
@@ -663,10 +663,49 @@ body.display-mode-light .btn-outline-light:hover {
   max-height: 240px;
 }
 
+.signal-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
 .latest-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.8rem;
+}
+
+.latest-terminal-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 360px;
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(6, 17, 23, 0.92);
+  border: 1px solid rgba(95, 208, 141, 0.14);
+  font-family: "SFMono-Regular", "Menlo", "Monaco", monospace;
+  font-size: 0.86rem;
+}
+
+.terminal-line {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.terminal-ts {
+  color: #79e2a1;
+}
+
+.terminal-msg {
+  color: #d7ece2;
+  word-break: break-word;
 }
 
 .toolbar-summary {

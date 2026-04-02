@@ -42,10 +42,12 @@ class HistoryFilters:
 DEFAULT_DASHBOARD_PREFERENCES = {
     "theme": "green",
     "mode": "dark",
+    "language": "en",
     "refresh_seconds": 10,
     "visible_tabs": ["consumption", "sales", "sources", "costs"],
     "kiosk_theme": "green",
     "kiosk_mode": "dark",
+    "kiosk_language": "en",
     "chart_variables": [],
 }
 
@@ -96,7 +98,7 @@ def latest_readings_stmt(device_ids: list[int] | None = None, variable_names: se
             Reading,
             and_(Reading.variable_id == latest_ts.c.variable_id, Reading.timestamp == latest_ts.c.max_timestamp),
         )
-        .where(Device.enabled.is_(True), Variable.enabled.is_(True))
+        .where(Device.enabled.is_(True), Device.last_error.is_(None), Device.last_seen_at.is_not(None), Variable.enabled.is_(True))
         .order_by(Device.name, Variable.name)
     )
     if device_ids:
@@ -117,7 +119,9 @@ def latest_readings_map(session, device_ids: list[int] | None = None) -> dict[in
 def build_dashboard_snapshot(session, device_ids: list[int] | None = None) -> dict:
     preferences = load_dashboard_preferences(session)
     metric_rows = session.execute(latest_readings_stmt(device_ids=device_ids)).mappings().all()
-    all_devices = session.scalars(select(Device).order_by(Device.name)).all()
+    all_devices = session.scalars(
+        select(Device).where(Device.enabled.is_(True), Device.last_error.is_(None), Device.last_seen_at.is_not(None)).order_by(Device.name)
+    ).all()
     devices = [device for device in all_devices if not device_ids or device.id in device_ids]
 
     device_cards = []

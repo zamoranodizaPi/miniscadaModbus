@@ -7,6 +7,7 @@
 {% set selection_energy_display = format_compact_metric(snapshot.selection.energy_kwh, 'kWh', 2) %}
 {% set selection_voltage_display = format_compact_metric(snapshot.selection.avg_voltage_v, 'V', 2) %}
 {% set selection_current_display = format_compact_metric(snapshot.selection.avg_current_a, 'A', 2) %}
+{% set t = get_locale_texts(preferences.language) %}
 {% block content %}
 <section class="energy-page" data-theme="{{ preferences.theme }}" data-mode="{{ preferences.mode }}" data-logo-mode="{{ preferences.mode }}">
   <header class="energy-header">
@@ -22,32 +23,32 @@
   <section class="energy-scroll-wrap">
     <div class="energy-grid">
       <article class="kpi-energy-card primary">
-        <span>Total Consumption</span>
+        <span>{{ t.total_consumption }}</span>
         <strong data-kpi="total_consumption_kwh">{{ total_consumption_display[0] }}</strong>
         <small data-kpi-unit="total_consumption_kwh">{{ total_consumption_display[1] }}</small>
       </article>
       <article class="kpi-energy-card">
-        <span>Total Sales</span>
+        <span>{{ t.total_sales }}</span>
         <strong data-kpi="total_sales_usd">{{ format_compact_value(snapshot.kpis.total_sales_usd, 2) }}</strong>
         <small data-kpi-unit="total_sales_usd">USD equivalent</small>
       </article>
       <article class="kpi-energy-card">
-        <span>Avg Production Costs</span>
+        <span>{{ t.avg_production_costs }}</span>
         <strong data-kpi="avg_production_cost_usd">{{ format_compact_value(snapshot.kpis.avg_production_cost_usd, 2) }}</strong>
         <small data-kpi-unit="avg_production_cost_usd">USD/day</small>
       </article>
       <article class="kpi-energy-card">
-        <span>Avg Voltage</span>
+        <span>{{ t.avg_voltage }}</span>
         <strong data-kpi="avg_voltage_v">{{ avg_voltage_display[0] }}</strong>
         <small data-kpi-unit="avg_voltage_v">{{ avg_voltage_display[1] }}</small>
       </article>
       <article class="kpi-energy-card">
-        <span>Avg Current</span>
+        <span>{{ t.avg_current }}</span>
         <strong data-kpi="avg_current_a">{{ avg_current_display[0] }}</strong>
         <small data-kpi-unit="avg_current_a">{{ avg_current_display[1] }}</small>
       </article>
       <article class="kpi-energy-card">
-        <span>Online Devices</span>
+        <span>{{ t.online_devices }}</span>
         <strong data-kpi="online_devices">{{ snapshot.kpis.online_devices }}</strong>
         <small data-kpi-unit="online_devices">of {{ snapshot.kpis.device_count }}</small>
       </article>
@@ -55,32 +56,32 @@
 
     <div class="energy-grid selection-grid">
       <article class="kpi-energy-card selection-highlight" id="selectionSummaryCard">
-        <span>Selected Device</span>
+        <span>{{ t.selected_device }}</span>
         <strong data-selection="label">{{ snapshot.selection.label }}</strong>
         <small data-selection-unit="label">{{ snapshot.selection.device_count }} device(s)</small>
       </article>
       <article class="kpi-energy-card">
-        <span>Selected Power</span>
+        <span>{{ t.selected_power }}</span>
         <strong data-selection="power_kw">{{ selection_power_display[0] }}</strong>
         <small data-selection-unit="power_kw">{{ selection_power_display[1] }}</small>
       </article>
       <article class="kpi-energy-card">
-        <span>Selected Energy</span>
+        <span>{{ t.selected_energy }}</span>
         <strong data-selection="energy_kwh">{{ selection_energy_display[0] }}</strong>
         <small data-selection-unit="energy_kwh">{{ selection_energy_display[1] }}</small>
       </article>
       <article class="kpi-energy-card">
-        <span>Selected Voltage</span>
+        <span>{{ t.selected_voltage }}</span>
         <strong data-selection="avg_voltage_v">{{ selection_voltage_display[0] }}</strong>
         <small data-selection-unit="avg_voltage_v">{{ selection_voltage_display[1] }}</small>
       </article>
       <article class="kpi-energy-card">
-        <span>Selected Current</span>
+        <span>{{ t.selected_current }}</span>
         <strong data-selection="avg_current_a">{{ selection_current_display[0] }}</strong>
         <small data-selection-unit="avg_current_a">{{ selection_current_display[1] }}</small>
       </article>
       <article class="kpi-energy-card">
-        <span>Selected Alerts</span>
+        <span>{{ t.selected_alerts }}</span>
         <strong data-selection="active_alerts">{{ snapshot.selection.active_alerts }}</strong>
         <small data-selection-unit="active_alerts">{{ "%.1f"|format(snapshot.selection.utilization_pct) }}% utilization</small>
       </article>
@@ -90,18 +91,18 @@
       <div class="toolbar-group">
         <label class="form-label">Devices</label>
         <select id="deviceSelect" class="form-select">
-          <option value="" {% if not selected_device_ids %}selected{% endif %}>Todos</option>
+          <option value="" {% if not selected_device_ids %}selected{% endif %}>{{ t.all }}</option>
           {% for device in devices %}
           <option value="{{ device.id }}" {% if device.id in selected_device_ids %}selected{% endif %}>{{ device.name }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="toolbar-group">
-        <label class="form-label">Configured Signals</label>
-        <div class="toolbar-summary" id="configuredSignalsSummary">{{ snapshot.chart_panels|length }} graphs active</div>
+        <label class="form-label">{{ t.configured_signals }}</label>
+        <div class="toolbar-summary" id="configuredSignalsSummary">{{ snapshot.chart_panels|length }} {{ t.graphs_active }}</div>
       </div>
       <div class="toolbar-group wide">
-        <label class="form-label">Selection Context</label>
+        <label class="form-label">{{ t.selection_context }}</label>
         <div class="toolbar-summary" id="webChartSelectionMeta">{{ snapshot.selection.label }}</div>
       </div>
     </section>
@@ -110,14 +111,19 @@
       <div class="panel-head">
         <div>
           <p class="panel-kicker">Signals</p>
-          <h2 class="panel-title">Configured Measurements</h2>
+          <h2 class="panel-title">{{ t.configured_measurements }}</h2>
         </div>
-        <span class="panel-badge">3 per row</span>
+        <span class="panel-badge">{{ t.three_per_row }}</span>
       </div>
       <div class="signal-chart-grid" id="signalChartGrid">
         {% for panel in snapshot.chart_panels %}
         <article class="chart-block signal-chart-card" data-chart-name="{{ panel.name }}" data-chart-type="{{ panel.chart_type }}" data-chart-unit="{{ panel.unit }}">
-          <h3>{{ panel.label }}</h3>
+          <div class="signal-chart-head">
+            <h3>{{ panel.label }}</h3>
+            {% if panel.chart_type == 'line' %}
+            <button class="btn btn-sm btn-outline-light signal-export-btn" type="button" data-export-chart="{{ panel.name }}">{{ t.export_csv }}</button>
+            {% endif %}
+          </div>
           <canvas id="signal-chart-{{ loop.index0 }}"></canvas>
         </article>
         {% endfor %}
@@ -128,15 +134,15 @@
       <div class="panel-head">
         <div>
           <p class="panel-kicker">Embedded Data</p>
-          <h2 class="panel-title">Latest Readings</h2>
+          <h2 class="panel-title">{{ t.latest_readings }}</h2>
         </div>
-        <span class="panel-badge">Live</span>
+        <span class="panel-badge">{{ t.terminal_log }}</span>
       </div>
-      <div id="latestReadingsList" class="stack-list latest-grid">
+      <div id="latestReadingsList" class="latest-terminal-log">
         {% for row in snapshot.latest_rows %}
-        <div class="stack-item muted">
-          <strong>{{ row.device }} / {{ row.variable }}</strong>
-          <span>{{ row.value }} | {{ row.timestamp }}</span>
+        <div class="terminal-line">
+          <span class="terminal-ts">{{ row.timestamp }}</span>
+          <span class="terminal-msg">{{ row.device }} / {{ row.variable }} = {{ row.value }}</span>
         </div>
         {% endfor %}
       </div>
@@ -148,6 +154,7 @@
 <script>
   const initialSnapshot = {{ snapshot|tojson }};
   const initialPreferences = {{ preferences|tojson }};
+  const localeTexts = {{ t|tojson }};
   const themePresets = {
     orange: { accent: "#ff9f43", accent2: "#ffb86c", surface: "#2e1f16", text: "#fff2e2", grid: "rgba(255,255,255,0.08)" },
     blue: { accent: "#4dabf7", accent2: "#74c0fc", surface: "#10263a", text: "#e3f2ff", grid: "rgba(255,255,255,0.08)" },
@@ -200,16 +207,27 @@
   function selectedDeviceLabel() {
     const select = document.getElementById("deviceSelect");
     const option = select.selectedOptions[0];
-    return option && option.value ? option.textContent : "All Devices";
+    return option && option.value ? option.textContent : localeTexts.all_devices;
   }
 
   function chartOptions(unit, theme) {
     return {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => items[0]?.label || "",
+            label: (context) => `${context.dataset.label}: ${formatAxisValue(context.parsed.y, unit)}`
+          }
+        }
+      },
       scales: {
-        x: { ticks: { color: theme.text }, grid: { color: theme.grid } },
+        x: { ticks: { color: theme.text, callback: function(_value, index) {
+          const label = this.getLabelForValue(index);
+          return label ? label.slice(11, 16) : "";
+        } }, grid: { color: theme.grid } },
         y: { ticks: { color: theme.text, callback: (value) => formatAxisValue(value, unit) }, grid: { color: theme.grid } }
       }
     };
@@ -221,7 +239,7 @@
     (snapshot.chart_panels || []).forEach((panel) => {
       payloads[panel.name] = {
         type: panel.chart_type === "bar" ? "bar" : "line",
-        labels: panel.series.map((row) => row.timestamp.slice(11, 16)),
+        labels: panel.series.map((row) => row.timestamp),
         datasets: [{
           label: panel.label,
           data: panel.series.map((row) => row.value),
@@ -271,7 +289,7 @@
 
   function updateLatest(rows) {
     const container = document.getElementById("latestReadingsList");
-    container.innerHTML = rows.map((row) => `<div class="stack-item muted"><strong>${row.device} / ${row.variable}</strong><span>${row.value} | ${row.timestamp}</span></div>`).join("");
+    container.innerHTML = rows.map((row) => `<div class="terminal-line"><span class="terminal-ts">${row.timestamp}</span><span class="terminal-msg">${row.device} / ${row.variable} = ${row.value}</span></div>`).join("");
   }
 
   function updateKpis(snapshot) {
@@ -325,9 +343,9 @@
     const labelNode = document.querySelector('[data-selection="label"]');
     const labelUnitNode = document.querySelector('[data-selection-unit="label"]');
     if (labelNode) labelNode.textContent = selection.label || selectedDeviceLabel();
-    if (labelUnitNode) labelUnitNode.textContent = isPlantView ? `Plant summary · ${selection.device_count || 0} device(s)` : `Device detail · ${selection.device_count || 0} device(s)`;
+    if (labelUnitNode) labelUnitNode.textContent = isPlantView ? `${localeTexts.plant_summary} · ${selection.device_count || 0} device(s)` : `${localeTexts.device_detail} · ${selection.device_count || 0} device(s)`;
     const chartMeta = document.getElementById("webChartSelectionMeta");
-    if (chartMeta) chartMeta.textContent = isPlantView ? "Plant overview" : (selection.label || selectedDeviceLabel());
+    if (chartMeta) chartMeta.textContent = isPlantView ? localeTexts.plant_overview : (selection.label || selectedDeviceLabel());
     const summaryCard = document.getElementById("selectionSummaryCard");
     if (summaryCard) {
       summaryCard.classList.toggle("selection-plant", isPlantView);
@@ -342,7 +360,7 @@
     const alertNode = document.querySelector('[data-selection="active_alerts"]');
     const alertUnitNode = document.querySelector('[data-selection-unit="active_alerts"]');
     if (alertNode) alertNode.textContent = formatNumber(selection.active_alerts || 0, 0);
-    if (alertUnitNode) alertUnitNode.textContent = `${formatNumber(selection.utilization_pct || 0, 1)}% utilization`;
+    if (alertUnitNode) alertUnitNode.textContent = `${formatNumber(selection.utilization_pct || 0, 1)}% ${localeTexts.utilization}`;
   }
 
   function refreshCharts(snapshot, themeName) {
@@ -388,6 +406,22 @@
     });
   }
 
+  function exportChartCsv(chartName) {
+    const panel = (currentSnapshot.chart_panels || []).find((item) => item.name === chartName);
+    if (!panel) return;
+    const lines = ["timestamp,value"];
+    panel.series.forEach((row) => lines.push(`${row.timestamp},${row.value}`));
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${chartName}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   function resetRefreshLoop() {
     if (refreshHandle) clearInterval(refreshHandle);
     refreshHandle = setInterval(refreshRealtime, Number(initialPreferences.refresh_seconds) * 1000);
@@ -403,5 +437,8 @@
 
   document.getElementById("deviceSelect").addEventListener("input", handleDeviceChange);
   document.getElementById("deviceSelect").addEventListener("change", handleDeviceChange);
+  document.querySelectorAll(".signal-export-btn").forEach((button) => {
+    button.addEventListener("click", () => exportChartCsv(button.dataset.exportChart));
+  });
 </script>
 {% endblock %}

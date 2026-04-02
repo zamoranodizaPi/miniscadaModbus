@@ -27,6 +27,14 @@
     </select>
   </div>
   <div class="col-md-4">
+    <label class="form-label">Language dashboard</label>
+    <select class="form-select" name="dashboard_language">
+      {% for language in ['en', 'es'] %}
+      <option value="{{ language }}" {% if dashboard_preferences.language == language %}selected{% endif %}>{{ 'English' if language == 'en' else 'Espanol' }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
     <label class="form-label">Refresh dashboard</label>
     <select class="form-select" name="dashboard_refresh_seconds">
       {% for seconds in [5, 10, 15] %}
@@ -47,6 +55,14 @@
     <select class="form-select" name="kiosk_mode">
       {% for mode in ['dark', 'light'] %}
       <option value="{{ mode }}" {% if dashboard_preferences.kiosk_mode == mode %}selected{% endif %}>{{ mode|capitalize }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Language kiosk</label>
+    <select class="form-select" name="kiosk_language">
+      {% for language in ['en', 'es'] %}
+      <option value="{{ language }}" {% if dashboard_preferences.kiosk_language == language %}selected{% endif %}>{{ 'English' if language == 'en' else 'Espanol' }}</option>
       {% endfor %}
     </select>
   </div>

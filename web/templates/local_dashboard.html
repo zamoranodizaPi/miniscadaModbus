@@ -13,6 +13,7 @@
   {% set local_consumption_display = format_compact_metric(snapshot.kpis.total_consumption_kwh, 'kWh', 1) %}
   {% set local_voltage_display = format_compact_metric(snapshot.kpis.avg_voltage_v, 'V', 1) %}
   {% set local_current_display = format_compact_metric(snapshot.kpis.avg_current_a, 'A', 1) %}
+  {% set t = get_locale_texts(preferences.kiosk_language) %}
   <body class="local-screen energy-page logo-mode-{{ preferences.kiosk_mode }} display-mode-{{ preferences.kiosk_mode }}" data-theme="{{ preferences.kiosk_theme }}" data-mode="{{ preferences.kiosk_mode }}">
     <main class="local-energy-shell local-energy-shell--focused">
       <section class="local-energy-header">
@@ -30,32 +31,32 @@
 
       <section class="local-energy-kpis">
         <article class="local-energy-kpi primary">
-          <span>Total Consumption</span>
+          <span>{{ t.total_consumption }}</span>
           <strong data-kpi="total_consumption_kwh">{{ local_consumption_display[0] }}</strong>
           <small data-kpi-unit="total_consumption_kwh">{{ local_consumption_display[1] }}</small>
         </article>
         <article class="local-energy-kpi">
-          <span>Total Sales</span>
+          <span>{{ t.total_sales }}</span>
           <strong data-kpi="total_sales_usd">{{ format_compact_value(snapshot.kpis.total_sales_usd, 1) }}</strong>
           <small data-kpi-unit="total_sales_usd">USD</small>
         </article>
         <article class="local-energy-kpi">
-          <span>Avg Production Costs</span>
+          <span>{{ t.avg_production_costs }}</span>
           <strong data-kpi="avg_production_cost_usd">{{ format_compact_value(snapshot.kpis.avg_production_cost_usd, 1) }}</strong>
           <small data-kpi-unit="avg_production_cost_usd">USD/day</small>
         </article>
         <article class="local-energy-kpi">
-          <span>Avg Voltage</span>
+          <span>{{ t.avg_voltage }}</span>
           <strong data-kpi="avg_voltage_v">{{ local_voltage_display[0] }}</strong>
           <small data-kpi-unit="avg_voltage_v">{{ local_voltage_display[1] }}</small>
         </article>
         <article class="local-energy-kpi">
-          <span>Avg Current</span>
+          <span>{{ t.avg_current }}</span>
           <strong data-kpi="avg_current_a">{{ local_current_display[0] }}</strong>
           <small data-kpi-unit="avg_current_a">{{ local_current_display[1] }}</small>
         </article>
         <article class="local-energy-kpi">
-          <span>Devices Online</span>
+          <span>{{ t.online_devices }}</span>
           <strong data-kpi="online_devices">{{ snapshot.kpis.online_devices }}</strong>
           <small data-kpi-unit="online_devices">of {{ snapshot.kpis.device_count }}</small>
         </article>
@@ -64,21 +65,22 @@
       <section class="local-energy-focus-panel">
         <div class="local-focus-toolbar">
           <div class="local-focus-control">
-            <label class="form-label">Equipos</label>
-            <select id="localDeviceSelect" class="form-select local-device-select" multiple size="6">
+            <label class="form-label">{{ t.devices }}</label>
+            <select id="localDeviceSelect" class="form-select local-device-select">
+              <option value="" {% if not selected_device_ids %}selected{% endif %}>{{ t.all }}</option>
               {% for device in devices %}
               <option value="{{ device.id }}" {% if device.id in selected_device_ids %}selected{% endif %}>{{ device.name }}</option>
               {% endfor %}
             </select>
-            <small class="text-secondary">Sin selección equivale a todos.</small>
+            <small class="text-secondary">{{ t.all_devices }}</small>
           </div>
           <div class="local-focus-chart-area">
             <div class="local-energy-panel-head mb-2">
               <div>
-                <span id="localSelectedDeviceTitle">All Devices</span>
+                <span id="localSelectedDeviceTitle">{{ t.all_devices }}</span>
                 <strong id="localActiveVariableTitle">Power</strong>
               </div>
-              <small>3 hour window</small>
+              <small>3 {{ t.hour_window }}</small>
             </div>
             <ul class="nav nav-pills energy-tab-nav local-kiosk-tabs mb-2" id="localVariableTabs" role="tablist">
               {% for variable_name, label in kiosk_tabs %}
@@ -98,6 +100,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script>
       let localSnapshot = {{ snapshot|tojson }};
+      const localeTexts = {{ t|tojson }};
       let activeVariable = "{{ kiosk_tabs[0][0] if kiosk_tabs else 'potencia_activa_kw' }}";
       const variableLabels = {
         {% for variable_name, label in kiosk_tabs %}
@@ -143,14 +146,14 @@
       });
 
       function selectedDeviceIds() {
-        return Array.from(document.getElementById("localDeviceSelect").selectedOptions).map((option) => option.value);
+        const value = document.getElementById("localDeviceSelect").value;
+        return value ? [value] : [];
       }
 
       function selectedDeviceLabel() {
-        const names = Array.from(document.getElementById("localDeviceSelect").selectedOptions).map((option) => option.textContent);
-        if (!names.length) return "All Devices";
-        if (names.length === 1) return names[0];
-        return `${names.length} Selected Devices`;
+        const select = document.getElementById("localDeviceSelect");
+        const option = select.selectedOptions[0];
+        return option && option.value ? option.textContent : localeTexts.all_devices;
       }
 
       function formatNumber(value, decimals = 1) {
