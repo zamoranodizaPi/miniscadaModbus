@@ -279,10 +279,7 @@ def build_power_timeseries(session, device_ids: list[int] | None = None, hours: 
 
 
 def build_variable_timeseries_bundle(session, variable_names: list[str], device_ids: list[int] | None = None, hours: int = 3) -> dict[str, list[dict]]:
-    bundle: dict[str, list[dict]] = {}
-    for variable_name in variable_names:
-        bundle[variable_name] = build_variable_timeseries(session, variable_name=variable_name, device_ids=device_ids, hours=hours)
-    return bundle
+    return build_variable_timeseries_map(session, variable_names, device_ids=device_ids, hours=hours)
 
 
 def build_variable_timeseries(
@@ -291,31 +288,54 @@ def build_variable_timeseries(
     device_ids: list[int] | None = None,
     hours: int = 3,
 ) -> list[dict]:
+    return build_variable_timeseries_map(session, [variable_name], device_ids=device_ids, hours=hours).get(variable_name, [])
+
+
+def build_variable_timeseries_map(
+    session,
+    variable_names: list[str],
+    device_ids: list[int] | None = None,
+    hours: int = 3,
+) -> dict[str, list[dict]]:
+    names = [name for name in variable_names if name]
+    if not names:
+        return {}
+
     since = utcnow() - timedelta(hours=hours)
     bucket = func.strftime("%Y-%m-%dT%H:%M:00", Reading.timestamp)
-    if variable_name in AVG_VARIABLES:
-        aggregate = func.avg(Reading.value)
-    elif variable_name in MAX_VARIABLES:
-        aggregate = func.max(Reading.value)
-    else:
-        aggregate = func.sum(Reading.value)
-    stmt = (
-        select(bucket.label("bucket"), aggregate.label("value"))
-        .join(Reading.variable)
-        .join(Variable.device)
-        .where(
-            Reading.timestamp >= since,
-            Variable.name == variable_name,
-            Variable.enabled.is_(True),
-            Device.enabled.is_(True),
+    grouped_rows: dict[str, list[tuple[str, float]]] = defaultdict(list)
+
+    families = [
+        ([name for name in names if name in AVG_VARIABLES], func.avg(Reading.value)),
+        ([name for name in names if name in MAX_VARIABLES], func.max(Reading.value)),
+        ([name for name in names if name not in AVG_VARIABLES and name not in MAX_VARIABLES], func.sum(Reading.value)),
+    ]
+
+    for family_names, aggregate in families:
+        if not family_names:
+            continue
+        stmt = (
+            select(Variable.name.label("variable_name"), bucket.label("bucket"), aggregate.label("value"))
+            .join(Reading.variable)
+            .join(Variable.device)
+            .where(
+                Reading.timestamp >= since,
+                Variable.name.in_(family_names),
+                Variable.enabled.is_(True),
+                Device.enabled.is_(True),
+            )
+            .group_by(Variable.name, "bucket")
+            .order_by(Variable.name, "bucket")
         )
-        .group_by("bucket")
-        .order_by("bucket")
-    )
-    if device_ids:
-        stmt = stmt.where(Device.id.in_(device_ids))
-    rows = session.execute(stmt).all()
-    return [{"timestamp": bucket_value, "value": round(float(value or 0.0), 2)} for bucket_value, value in rows]
+        if device_ids:
+            stmt = stmt.where(Device.id.in_(device_ids))
+        for variable_name, bucket_value, value in session.execute(stmt).all():
+            grouped_rows[variable_name].append((bucket_value, float(value or 0.0)))
+
+    payload = {name: [] for name in names}
+    for variable_name, rows in grouped_rows.items():
+        payload[variable_name] = [{"timestamp": bucket_value, "value": round(value, 2)} for bucket_value, value in rows]
+    return payload
 
 
 def energy_aggregate(
@@ -391,8 +411,10 @@ def variable_inventory(session) -> list[str]:
 
 
 def build_dashboard_chart_panels(session, preferences: dict, device_ids: list[int] | None = None, hours: int = 6) -> list[dict]:
+    configured = [chart for chart in preferences.get("chart_variables", []) if chart.get("enabled")]
+    series_map = build_variable_timeseries_map(session, [chart["name"] for chart in configured], device_ids=device_ids, hours=hours)
     panels = []
-    for chart in preferences.get("chart_variables", []):
+    for chart in configured:
         if not chart.get("enabled"):
             continue
         variable_name = chart["name"]
@@ -403,7 +425,7 @@ def build_dashboard_chart_panels(session, preferences: dict, device_ids: list[in
                 "chart_type": chart.get("chart_type", default_chart_type_for_variable(variable_name)),
                 "order": int(chart.get("order", 999)),
                 "unit": infer_unit_for_variable(variable_name),
-                "series": build_variable_timeseries(session, variable_name=variable_name, device_ids=device_ids, hours=hours),
+                "series": series_map.get(variable_name, []),
             }
         )
     panels.sort(key=lambda item: (item["order"], item["label"]))
