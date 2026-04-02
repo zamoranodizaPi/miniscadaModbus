@@ -560,6 +560,12 @@ a {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.chart-block canvas {
+  display: block;
+  height: 170px !important;
+  max-height: 170px;
+}
+
 .chart-block h3 {
   margin: 0 0 0.8rem;
   font-size: 0.98rem;

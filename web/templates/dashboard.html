@@ -278,60 +278,69 @@
     return { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { color: theme.text } } } };
   }
 
-  function makeCharts(snapshot, themeName) {
+  function chartPayloads(snapshot, themeName) {
     const theme = themePresets[themeName];
-    const consumption = aggregated(snapshot.daily_energy, "energy_kwh");
     const sales = snapshot.sales_trend.map((row) => [row.bucket, row.sales_amount]);
     const costs = snapshot.costs_trend.map((row) => [row.bucket, row.avg_cost]);
     const sectors = snapshot.sector_mix;
     const alerts = alertsSeries(snapshot);
-
-    charts.consumptionLine = new Chart(document.getElementById("consumptionLineChart"), {
-      type: "line",
-      data: { labels: snapshot.trend.map((row) => row.timestamp.slice(11, 16)), datasets: [{ label: "Total Consumption", data: snapshot.trend.map((row) => row.power_kw), borderColor: theme.accent, backgroundColor: `${theme.accent}33`, fill: true, tension: 0.3, pointRadius: 0 }] },
-      options: chartOptions("kW", theme)
-    });
-    charts.sectorBar = new Chart(document.getElementById("sectorBarChart"), {
-      type: "bar",
-      data: { labels: sectors.map((row) => row.label), datasets: [{ label: "Consumption by Sector", data: sectors.map((row) => row.value), backgroundColor: theme.accent, borderRadius: 8 }] },
-      options: chartOptions("kW", theme)
-    });
-    charts.salesLine = new Chart(document.getElementById("salesLineChart"), {
-      type: "line",
-      data: { labels: sales.map((row) => row[0]), datasets: [{ label: "Total Sales", data: sales.map((row) => row[1]), borderColor: theme.accent2, backgroundColor: `${theme.accent2}33`, fill: true, tension: 0.3, pointRadius: 0 }] },
-      options: chartOptions("USD", theme)
-    });
-    charts.salesBar = new Chart(document.getElementById("salesBarChart"), {
-      type: "bar",
-      data: { labels: sectors.map((row) => row.label), datasets: [{ label: "Sales by Sector", data: sectors.map((row) => Number((row.value * 0.14).toFixed(2))), backgroundColor: theme.accent2, borderRadius: 8 }] },
-      options: chartOptions("USD", theme)
-    });
-    charts.sourcesDonut = new Chart(document.getElementById("sourcesDonutChart"), {
-      type: "doughnut",
-      data: { labels: snapshot.source_mix.map((row) => row.label), datasets: [{ data: snapshot.source_mix.map((row) => row.value), backgroundColor: [theme.accent, theme.accent2, "#ffd166"], borderWidth: 0 }] },
-      options: donutOptions(theme)
-    });
-    charts.renewableDonut = new Chart(document.getElementById("renewableDonutChart"), {
-      type: "doughnut",
-      data: { labels: ["Renewable", "Conventional"], datasets: [{ data: renewableSeries(snapshot), backgroundColor: [theme.accent, `${theme.text}22`], borderWidth: 0 }] },
-      options: donutOptions(theme)
-    });
-    charts.costsBar = new Chart(document.getElementById("costsBarChart"), {
-      type: "bar",
-      data: { labels: costs.map((row) => row[0]), datasets: [{ label: "Avg Production Costs", data: costs.map((row) => row[1]), backgroundColor: theme.accent, borderRadius: 8 }] },
-      options: chartOptions("USD", theme)
-    });
-    charts.alertsArea = new Chart(document.getElementById("alertsAreaChart"), {
-      type: "line",
-      data: {
+    return {
+      consumptionLine: {
+        labels: snapshot.trend.map((row) => row.timestamp.slice(11, 16)),
+        datasets: [{ label: "Total Consumption", data: snapshot.trend.map((row) => row.power_kw), borderColor: theme.accent, backgroundColor: `${theme.accent}33`, fill: true, tension: 0.3, pointRadius: 0 }],
+        options: chartOptions("kW", theme)
+      },
+      sectorBar: {
+        labels: sectors.map((row) => row.label),
+        datasets: [{ label: "Consumption by Sector", data: sectors.map((row) => row.value), backgroundColor: theme.accent, borderRadius: 8 }],
+        options: chartOptions("kW", theme)
+      },
+      salesLine: {
+        labels: sales.map((row) => row[0]),
+        datasets: [{ label: "Total Sales", data: sales.map((row) => row[1]), borderColor: theme.accent2, backgroundColor: `${theme.accent2}33`, fill: true, tension: 0.3, pointRadius: 0 }],
+        options: chartOptions("USD", theme)
+      },
+      salesBar: {
+        labels: sectors.map((row) => row.label),
+        datasets: [{ label: "Sales by Sector", data: sectors.map((row) => Number((row.value * 0.14).toFixed(2))), backgroundColor: theme.accent2, borderRadius: 8 }],
+        options: chartOptions("USD", theme)
+      },
+      sourcesDonut: {
+        labels: snapshot.source_mix.map((row) => row.label),
+        datasets: [{ data: snapshot.source_mix.map((row) => row.value), backgroundColor: [theme.accent, theme.accent2, "#ffd166"], borderWidth: 0 }],
+        options: donutOptions(theme)
+      },
+      renewableDonut: {
+        labels: ["Renewable", "Conventional"],
+        datasets: [{ data: renewableSeries(snapshot), backgroundColor: [theme.accent, `${theme.text}22`], borderWidth: 0 }],
+        options: donutOptions(theme)
+      },
+      costsBar: {
+        labels: costs.map((row) => row[0]),
+        datasets: [{ label: "Avg Production Costs", data: costs.map((row) => row[1]), backgroundColor: theme.accent, borderRadius: 8 }],
+        options: chartOptions("USD", theme)
+      },
+      alertsArea: {
         labels: alerts.labels,
         datasets: [
           { label: "Power Cuts", data: alerts.values, borderColor: "#ff6b6b", backgroundColor: "rgba(255,107,107,0.22)", fill: true, tension: 0.35 },
           { label: "Duration", data: alerts.durations, borderColor: theme.accent2, backgroundColor: "rgba(0,0,0,0)", fill: false, tension: 0.35 }
-        ]
-      },
-      options: chartOptions("", theme)
-    });
+        ],
+        options: chartOptions("", theme)
+      }
+    };
+  }
+
+  function ensureCharts(snapshot, themeName) {
+    const payloads = chartPayloads(snapshot, themeName);
+    charts.consumptionLine = new Chart(document.getElementById("consumptionLineChart"), { type: "line", data: { labels: payloads.consumptionLine.labels, datasets: payloads.consumptionLine.datasets }, options: payloads.consumptionLine.options });
+    charts.sectorBar = new Chart(document.getElementById("sectorBarChart"), { type: "bar", data: { labels: payloads.sectorBar.labels, datasets: payloads.sectorBar.datasets }, options: payloads.sectorBar.options });
+    charts.salesLine = new Chart(document.getElementById("salesLineChart"), { type: "line", data: { labels: payloads.salesLine.labels, datasets: payloads.salesLine.datasets }, options: payloads.salesLine.options });
+    charts.salesBar = new Chart(document.getElementById("salesBarChart"), { type: "bar", data: { labels: payloads.salesBar.labels, datasets: payloads.salesBar.datasets }, options: payloads.salesBar.options });
+    charts.sourcesDonut = new Chart(document.getElementById("sourcesDonutChart"), { type: "doughnut", data: { labels: payloads.sourcesDonut.labels, datasets: payloads.sourcesDonut.datasets }, options: payloads.sourcesDonut.options });
+    charts.renewableDonut = new Chart(document.getElementById("renewableDonutChart"), { type: "doughnut", data: { labels: payloads.renewableDonut.labels, datasets: payloads.renewableDonut.datasets }, options: payloads.renewableDonut.options });
+    charts.costsBar = new Chart(document.getElementById("costsBarChart"), { type: "bar", data: { labels: payloads.costsBar.labels, datasets: payloads.costsBar.datasets }, options: payloads.costsBar.options });
+    charts.alertsArea = new Chart(document.getElementById("alertsAreaChart"), { type: "line", data: { labels: payloads.alertsArea.labels, datasets: payloads.alertsArea.datasets }, options: payloads.alertsArea.options });
   }
 
   function applyTheme(themeName) {
@@ -381,8 +390,15 @@
   }
 
   function refreshCharts(snapshot, themeName) {
-    Object.values(charts).forEach((chart) => chart.destroy());
-    makeCharts(snapshot, themeName);
+    const payloads = chartPayloads(snapshot, themeName);
+    Object.entries(payloads).forEach(([key, payload]) => {
+      const chart = charts[key];
+      if (!chart) return;
+      chart.data.labels = payload.labels;
+      chart.data.datasets = payload.datasets;
+      chart.options = payload.options;
+      chart.update("none");
+    });
   }
 
   async function persistPreferences() {
@@ -420,7 +436,7 @@
   }
 
   applyTheme(initialPreferences.theme);
-  makeCharts(initialSnapshot, initialPreferences.theme);
+  ensureCharts(initialSnapshot, initialPreferences.theme);
   syncTabVisibility();
   resetRefreshLoop();
 
