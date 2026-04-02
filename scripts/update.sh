@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_DIR="${MINISCADA_APP_DIR:-/opt/miniscadaModbus}"
 APP_USER="${MINISCADA_APP_USER:-pi}"
+ENABLE_KIOSK="${MINISCADA_ENABLE_KIOSK:-1}"
 
 run_as_root() {
   if [[ "${EUID}" -eq 0 ]]; then
@@ -55,6 +56,9 @@ restart_services() {
   sleep 2
   run_as_root systemctl restart miniscada-daemon.service
   run_as_root systemctl restart miniscada-web.service
+  if [[ "${ENABLE_KIOSK}" == "1" ]] && run_as_root systemctl list-unit-files miniscada-kiosk.service >/dev/null 2>&1; then
+    run_as_root systemctl restart miniscada-kiosk.service
+  fi
 }
 
 main() {
@@ -70,11 +74,13 @@ Servicios reiniciados:
 - miniscada-simulator.service
 - miniscada-daemon.service
 - miniscada-web.service
+- miniscada-kiosk.service
 
 Verificacion:
 sudo systemctl status miniscada-web.service
 sudo systemctl status miniscada-daemon.service
 sudo systemctl status miniscada-simulator.service
+sudo systemctl status miniscada-kiosk.service
 EOF
 }
 

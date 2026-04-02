@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 from io import StringIO
 
-from flask import Flask, flash, jsonify, make_response, redirect, render_template, request, url_for
+from flask import Flask, abort, flash, jsonify, make_response, redirect, render_template, request, url_for
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -58,6 +58,13 @@ def create_app() -> Flask:
             variables=variables,
             selected_device_id=selected_device_id,
         )
+
+    @app.route("/local")
+    def local_dashboard():
+        require_local_request()
+        with session_scope() as session:
+            snapshot = build_dashboard_snapshot(session)
+        return render_template("local_dashboard.html", snapshot=snapshot)
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
@@ -275,6 +282,13 @@ def create_app() -> Flask:
             payload = build_dashboard_snapshot(session, device_id=device_id)
         return jsonify(payload)
 
+    @app.route("/api/local/realtime")
+    def api_local_realtime():
+        require_local_request()
+        with session_scope() as session:
+            payload = build_dashboard_snapshot(session)
+        return jsonify(payload)
+
     @app.route("/api/devices")
     @login_required
     def api_devices():
@@ -369,6 +383,12 @@ def get_optional_int(value: str | None) -> int | None:
     if not value:
         return None
     return int(value)
+
+
+def require_local_request() -> None:
+    remote_addr = request.remote_addr or ""
+    if remote_addr not in {"127.0.0.1", "::1"}:
+        abort(403)
 
 
 @login_manager.user_loader

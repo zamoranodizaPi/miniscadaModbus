@@ -37,6 +37,7 @@ export MINISCADA_APP_DIR=/opt/miniscadaModbus
 export MINISCADA_APP_USER=pi
 export MINISCADA_WEB_PORT=8000
 export MINISCADA_SECRET_KEY='cambia-esto'
+export MINISCADA_ENABLE_KIOSK=1
 ./scripts/install.sh
 ```
 
@@ -51,6 +52,25 @@ chmod +x scripts/update.sh
 ```
 
 Este script sincroniza el código hacia `/opt/miniscadaModbus`, actualiza dependencias del entorno virtual, vuelve a sembrar los simuladores y reinicia los servicios.
+
+## Pantalla local embebida
+
+El despliegue embebido instala también un modo kiosk local optimizado para pantalla `1024x600`. Al arrancar la Raspberry se abre automáticamente Chromium en pantalla completa apuntando a:
+
+- `http://127.0.0.1:8000/local`
+
+Esta vista no requiere login, pero solo responde desde `localhost`, por lo que no queda expuesta a la red.
+
+Servicio asociado:
+
+- `miniscada-kiosk.service`
+
+Si no quieres pantalla local automática:
+
+```bash
+export MINISCADA_ENABLE_KIOSK=0
+./scripts/install.sh
+```
 
 ## Ejecución manual
 
@@ -81,6 +101,7 @@ Estado de servicios:
 sudo systemctl status miniscada-web.service
 sudo systemctl status miniscada-daemon.service
 sudo systemctl status miniscada-simulator.service
+sudo systemctl status miniscada-kiosk.service
 ```
 
 Reinicio:

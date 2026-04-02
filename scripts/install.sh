@@ -6,6 +6,7 @@ APP_DIR="${MINISCADA_APP_DIR:-/opt/miniscadaModbus}"
 APP_USER="${MINISCADA_APP_USER:-pi}"
 WEB_PORT="${MINISCADA_WEB_PORT:-8000}"
 SECRET_KEY="${MINISCADA_SECRET_KEY:-change-me}"
+ENABLE_KIOSK="${MINISCADA_ENABLE_KIOSK:-1}"
 SYSTEMD_DIR="/etc/systemd/system"
 ENV_FILE="/etc/default/miniscada"
 
@@ -33,8 +34,12 @@ run_as_app() {
 }
 
 install_packages() {
+  local browser_pkg="chromium-browser"
+  if ! apt-cache show chromium-browser >/dev/null 2>&1; then
+    browser_pkg="chromium"
+  fi
   run_as_root apt-get update
-  run_as_root apt-get install -y python3 python3-venv python3-pip python3-full rsync
+  run_as_root apt-get install -y python3 python3-venv python3-pip python3-full rsync xserver-xorg xinit x11-xserver-utils openbox unclutter "${browser_pkg}"
 }
 
 sync_project() {
@@ -59,6 +64,7 @@ MINISCADA_WEB_PORT=${WEB_PORT}
 MINISCADA_DATABASE_URL=sqlite:///${APP_DIR}/instance/miniscada.db
 MINISCADA_CONFIG_PATH=${APP_DIR}/config/initial_config.yaml
 MINISCADA_LOG_LEVEL=INFO
+MINISCADA_LOCAL_DASHBOARD_URL=http://127.0.0.1:${WEB_PORT}/local
 EOF
 }
 
@@ -82,10 +88,17 @@ install_services() {
   render_service "${APP_DIR}/deploy/miniscada-web.service" "${SYSTEMD_DIR}/miniscada-web.service"
   render_service "${APP_DIR}/deploy/miniscada-daemon.service" "${SYSTEMD_DIR}/miniscada-daemon.service"
   render_service "${APP_DIR}/deploy/miniscada-simulator.service" "${SYSTEMD_DIR}/miniscada-simulator.service"
+  if [[ "${ENABLE_KIOSK}" == "1" ]]; then
+    render_service "${APP_DIR}/deploy/miniscada-kiosk.service" "${SYSTEMD_DIR}/miniscada-kiosk.service"
+  fi
   run_as_root systemctl daemon-reload
   run_as_root systemctl enable miniscada-simulator.service
   run_as_root systemctl enable miniscada-daemon.service
   run_as_root systemctl enable miniscada-web.service
+  if [[ "${ENABLE_KIOSK}" == "1" ]]; then
+    run_as_root systemctl enable miniscada-kiosk.service
+    run_as_root systemctl set-default graphical.target
+  fi
 }
 
 seed_simulators() {
@@ -101,12 +114,18 @@ restart_services() {
   sleep 2
   run_as_root systemctl restart miniscada-daemon.service
   run_as_root systemctl restart miniscada-web.service
+  if [[ "${ENABLE_KIOSK}" == "1" ]]; then
+    run_as_root systemctl restart miniscada-kiosk.service
+  fi
 }
 
 show_status() {
   run_as_root systemctl --no-pager --full status miniscada-simulator.service || true
   run_as_root systemctl --no-pager --full status miniscada-daemon.service || true
   run_as_root systemctl --no-pager --full status miniscada-web.service || true
+  if [[ "${ENABLE_KIOSK}" == "1" ]]; then
+    run_as_root systemctl --no-pager --full status miniscada-kiosk.service || true
+  fi
 }
 
 main() {
@@ -133,16 +152,19 @@ Servicios habilitados:
 - miniscada-web.service
 - miniscada-daemon.service
 - miniscada-simulator.service
+- miniscada-kiosk.service
 
 Verificacion rapida:
 sudo systemctl status miniscada-web.service
 sudo systemctl status miniscada-daemon.service
 sudo systemctl status miniscada-simulator.service
+sudo systemctl status miniscada-kiosk.service
 
 Logs:
 journalctl -u miniscada-web.service -f
 journalctl -u miniscada-daemon.service -f
 journalctl -u miniscada-simulator.service -f
+journalctl -u miniscada-kiosk.service -f
 EOF
 
   show_status
