@@ -280,6 +280,17 @@ def create_app() -> Flask:
                 dashboard_preferences["refresh_seconds"] = int(request.form.get("dashboard_refresh_seconds", dashboard_preferences["refresh_seconds"]))
                 dashboard_preferences["kiosk_theme"] = request.form.get("kiosk_theme", dashboard_preferences["kiosk_theme"])
                 dashboard_preferences["kiosk_mode"] = request.form.get("kiosk_mode", dashboard_preferences["kiosk_mode"])
+                chart_variables = []
+                for variable_name in variable_inventory(session):
+                    chart_variables.append(
+                        {
+                            "name": variable_name,
+                            "enabled": request.form.get(f"chart_enabled__{variable_name}") == "on",
+                            "chart_type": request.form.get(f"chart_type__{variable_name}", "line"),
+                            "order": int(request.form.get(f"chart_order__{variable_name}", "999")),
+                        }
+                    )
+                dashboard_preferences["chart_variables"] = chart_variables
                 upsert_setting(session, "dashboard_preferences", json_dumps(dashboard_preferences))
                 if request.form.get("new_password"):
                     user = session.get(User, current_user.id)
@@ -293,7 +304,8 @@ def create_app() -> Flask:
                     select(Setting).where(Setting.key.in_(["default_poll_interval", "daemon_reload_interval"]))
                 ).all()
             }
-        return render_template("settings.html", values=values, dashboard_preferences=dashboard_preferences)
+            chart_variables = dashboard_preferences.get("chart_variables", [])
+        return render_template("settings.html", values=values, dashboard_preferences=dashboard_preferences, chart_variables=chart_variables)
 
     @app.route("/readings")
     @login_required

@@ -46,7 +46,19 @@ DEFAULT_DASHBOARD_PREFERENCES = {
     "visible_tabs": ["consumption", "sales", "sources", "costs"],
     "kiosk_theme": "green",
     "kiosk_mode": "dark",
+    "chart_variables": [],
 }
+
+AVG_VARIABLES = {VOLTAGE_VARIABLE, CURRENT_VARIABLE, "frecuencia_hz", "factor_potencia"}
+MAX_VARIABLES = DEVICE_STATUS_VARIABLES
+DEFAULT_WEB_CHART_VARIABLES = [
+    POWER_VARIABLE,
+    ENERGY_VARIABLE,
+    VOLTAGE_VARIABLE,
+    CURRENT_VARIABLE,
+    "frecuencia_hz",
+    "factor_potencia",
+]
 
 
 def utcnow() -> datetime:
@@ -103,6 +115,7 @@ def latest_readings_map(session, device_ids: list[int] | None = None) -> dict[in
 
 
 def build_dashboard_snapshot(session, device_ids: list[int] | None = None) -> dict:
+    preferences = load_dashboard_preferences(session)
     metric_rows = session.execute(latest_readings_stmt(device_ids=device_ids)).mappings().all()
     all_devices = session.scalars(select(Device).order_by(Device.name)).all()
     devices = [device for device in all_devices if not device_ids or device.id in device_ids]
@@ -234,6 +247,7 @@ def build_dashboard_snapshot(session, device_ids: list[int] | None = None) -> di
         "monthly_energy": monthly_rows,
         "latest_rows": sorted(latest_rows, key=lambda item: item["timestamp"], reverse=True)[:24],
         "alerts": alerts[:8],
+        "chart_panels": build_dashboard_chart_panels(session, preferences, device_ids=device_ids, hours=6),
     }
 
 
@@ -274,7 +288,12 @@ def build_variable_timeseries(
 ) -> list[dict]:
     since = utcnow() - timedelta(hours=hours)
     bucket = func.strftime("%Y-%m-%dT%H:%M:00", Reading.timestamp)
-    aggregate = func.avg(Reading.value) if variable_name in {VOLTAGE_VARIABLE, CURRENT_VARIABLE} else func.sum(Reading.value)
+    if variable_name in AVG_VARIABLES:
+        aggregate = func.avg(Reading.value)
+    elif variable_name in MAX_VARIABLES:
+        aggregate = func.max(Reading.value)
+    else:
+        aggregate = func.sum(Reading.value)
     stmt = (
         select(bucket.label("bucket"), aggregate.label("value"))
         .join(Reading.variable)
@@ -364,6 +383,26 @@ def device_inventory(session) -> list[dict]:
 def variable_inventory(session) -> list[str]:
     rows = session.scalars(select(Variable.name).where(Variable.enabled.is_(True)).distinct().order_by(Variable.name)).all()
     return list(rows)
+
+
+def build_dashboard_chart_panels(session, preferences: dict, device_ids: list[int] | None = None, hours: int = 6) -> list[dict]:
+    panels = []
+    for chart in preferences.get("chart_variables", []):
+        if not chart.get("enabled"):
+            continue
+        variable_name = chart["name"]
+        panels.append(
+            {
+                "name": variable_name,
+                "label": humanize_variable_name(variable_name),
+                "chart_type": chart.get("chart_type", default_chart_type_for_variable(variable_name)),
+                "order": int(chart.get("order", 999)),
+                "unit": infer_unit_for_variable(variable_name),
+                "series": build_variable_timeseries(session, variable_name=variable_name, device_ids=device_ids, hours=hours),
+            }
+        )
+    panels.sort(key=lambda item: (item["order"], item["label"]))
+    return panels
 
 
 def history_rows(session, filters: HistoryFilters, page: int = 1, per_page: int = 100) -> dict:
@@ -482,11 +521,66 @@ def load_dashboard_preferences(session) -> dict:
 
     row = session.scalar(select(Setting).where(Setting.key == "dashboard_preferences"))
     if row is None:
-        return dict(DEFAULT_DASHBOARD_PREFERENCES)
+        merged = dict(DEFAULT_DASHBOARD_PREFERENCES)
+        merged["chart_variables"] = normalize_chart_preferences(variable_inventory(session), [])
+        return merged
     try:
         parsed = json.loads(row.value)
     except json.JSONDecodeError:
-        return dict(DEFAULT_DASHBOARD_PREFERENCES)
+        merged = dict(DEFAULT_DASHBOARD_PREFERENCES)
+        merged["chart_variables"] = normalize_chart_preferences(variable_inventory(session), [])
+        return merged
     merged = dict(DEFAULT_DASHBOARD_PREFERENCES)
     merged.update({key: value for key, value in parsed.items() if key in merged})
+    merged["chart_variables"] = normalize_chart_preferences(variable_inventory(session), parsed.get("chart_variables", []))
     return merged
+
+
+def normalize_chart_preferences(variable_names: list[str], configured: list[dict]) -> list[dict]:
+    configured_map = {row.get("name"): row for row in configured if isinstance(row, dict) and row.get("name")}
+    ordered_names = []
+    for name in DEFAULT_WEB_CHART_VARIABLES:
+        if name in variable_names and name not in ordered_names:
+            ordered_names.append(name)
+    for name in variable_names:
+        if name not in ordered_names:
+            ordered_names.append(name)
+    normalized = []
+    for index, name in enumerate(ordered_names, start=1):
+        current = configured_map.get(name, {})
+        normalized.append(
+            {
+                "name": name,
+                "enabled": bool(current.get("enabled", name in DEFAULT_WEB_CHART_VARIABLES)),
+                "chart_type": current.get("chart_type", default_chart_type_for_variable(name)),
+                "order": int(current.get("order", index)),
+            }
+        )
+    return normalized
+
+
+def default_chart_type_for_variable(variable_name: str) -> str:
+    if variable_name in {ENERGY_VARIABLE, POWER_VARIABLE}:
+        return "line"
+    return "bar" if variable_name in MAX_VARIABLES else "line"
+
+
+def infer_unit_for_variable(variable_name: str) -> str:
+    if "energia" in variable_name:
+        return "kWh"
+    if "potencia" in variable_name or "demanda" in variable_name:
+        return "kW"
+    if "volt" in variable_name:
+        return "V"
+    if "corriente" in variable_name or "amp" in variable_name:
+        return "A"
+    if "frecuencia" in variable_name:
+        return "Hz"
+    if "factor_potencia" in variable_name:
+        return "PF"
+    return ""
+
+
+def humanize_variable_name(variable_name: str) -> str:
+    label = variable_name.replace("_", " ").title()
+    return label.replace("Kwh", "kWh").replace("Kw", "kW").replace("Hz", "Hz").replace("Pf", "PF")

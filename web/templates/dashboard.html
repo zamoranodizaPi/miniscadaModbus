@@ -86,7 +86,7 @@
       </article>
     </div>
 
-    <section class="energy-toolbar panel-card">
+    <section class="energy-toolbar panel-card energy-toolbar-compact">
       <div class="toolbar-group">
         <label class="form-label">Devices</label>
         <select id="deviceSelect" class="form-select">
@@ -96,149 +96,51 @@
           {% endfor %}
         </select>
       </div>
+      <div class="toolbar-group">
+        <label class="form-label">Configured Signals</label>
+        <div class="toolbar-summary" id="configuredSignalsSummary">{{ snapshot.chart_panels|length }} graphs active</div>
+      </div>
       <div class="toolbar-group wide">
-        <label class="form-label">Visible Tabs</label>
-        <div class="tab-toggle-grid">
-          {% for tab_id, label in [('consumption','Consumption'),('sales','Sales'),('sources','Sources'),('costs','Production Costs')] %}
-          <label class="toggle-chip">
-            <input class="tab-toggle" type="checkbox" value="{{ tab_id }}" {% if tab_id in preferences.visible_tabs %}checked{% endif %}>
-            <span>{{ label }}</span>
-          </label>
-          {% endfor %}
-        </div>
+        <label class="form-label">Selection Context</label>
+        <div class="toolbar-summary" id="webChartSelectionMeta">{{ snapshot.selection.label }}</div>
       </div>
     </section>
 
-    <div class="energy-content-grid">
-      <section class="panel-card touch-panel chart-tabs-panel">
-        <div class="panel-head">
-          <div>
-            <p class="panel-kicker">Tabs</p>
-            <h2 class="panel-title">Realtime and Historical Charts</h2>
-            <p class="panel-selection-meta" id="webChartSelectionMeta">{{ snapshot.selection.label }}</p>
-          </div>
-          <span class="panel-badge">Configurable</span>
+    <section class="panel-card touch-panel chart-wall-panel">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Signals</p>
+          <h2 class="panel-title">Configured Measurements</h2>
         </div>
-        <ul class="nav nav-pills energy-tab-nav mb-3" id="energyTabNav" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="consumption-tab" data-bs-toggle="pill" data-bs-target="#consumption-pane" type="button" role="tab">Consumption</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="sales-tab" data-bs-toggle="pill" data-bs-target="#sales-pane" type="button" role="tab">Sales</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="sources-tab" data-bs-toggle="pill" data-bs-target="#sources-pane" type="button" role="tab">Sources</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="costs-tab" data-bs-toggle="pill" data-bs-target="#costs-pane" type="button" role="tab">Production Costs</button>
-          </li>
-        </ul>
-        <div class="tab-content">
-          <div class="tab-pane fade show active" id="consumption-pane" role="tabpanel">
-            <div class="chart-flex-grid">
-              <div class="chart-block">
-                <h3>Total Consumption</h3>
-                <canvas id="consumptionLineChart" height="170"></canvas>
-              </div>
-              <div class="chart-block">
-                <h3>Consumption by Sector</h3>
-                <canvas id="sectorBarChart" height="170"></canvas>
-              </div>
-            </div>
-          </div>
-          <div class="tab-pane fade" id="sales-pane" role="tabpanel">
-            <div class="chart-flex-grid">
-              <div class="chart-block">
-                <h3>Total Sales</h3>
-                <canvas id="salesLineChart" height="170"></canvas>
-              </div>
-              <div class="chart-block">
-                <h3>Sales by Sector</h3>
-                <canvas id="salesBarChart" height="170"></canvas>
-              </div>
-            </div>
-          </div>
-          <div class="tab-pane fade" id="sources-pane" role="tabpanel">
-            <div class="chart-flex-grid">
-              <div class="chart-block">
-                <h3>Energy Sources</h3>
-                <canvas id="sourcesDonutChart" height="170"></canvas>
-              </div>
-              <div class="chart-block">
-                <h3>Contribution Renewable</h3>
-                <canvas id="renewableDonutChart" height="170"></canvas>
-              </div>
-            </div>
-          </div>
-          <div class="tab-pane fade" id="costs-pane" role="tabpanel">
-            <div class="chart-flex-grid">
-              <div class="chart-block">
-                <h3>Avg Production Costs</h3>
-                <canvas id="costsBarChart" height="170"></canvas>
-              </div>
-              <div class="chart-block">
-                <h3>Power Cuts & Duration</h3>
-                <canvas id="alertsAreaChart" height="170"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        <span class="panel-badge">3 per row</span>
+      </div>
+      <div class="signal-chart-grid" id="signalChartGrid">
+        {% for panel in snapshot.chart_panels %}
+        <article class="chart-block signal-chart-card" data-chart-name="{{ panel.name }}" data-chart-type="{{ panel.chart_type }}" data-chart-unit="{{ panel.unit }}">
+          <h3>{{ panel.label }}</h3>
+          <canvas id="signal-chart-{{ loop.index0 }}"></canvas>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
 
-      <aside class="panel-card touch-panel side-data-panel">
-        <div class="panel-head">
-          <div>
-            <p class="panel-kicker">Embedded Data</p>
-            <h2 class="panel-title">Latest Readings</h2>
-          </div>
-          <span class="panel-badge">Live</span>
+    <section class="panel-card touch-panel latest-panel-full">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Embedded Data</p>
+          <h2 class="panel-title">Latest Readings</h2>
         </div>
-        <div id="latestReadingsList" class="stack-list compact touch-reads">
-          {% for row in snapshot.latest_rows %}
-          <div class="stack-item muted">
-            <strong>{{ row.device }} / {{ row.variable }}</strong>
-            <span>{{ row.value }} | {{ row.timestamp }}</span>
-          </div>
-          {% endfor %}
+        <span class="panel-badge">Live</span>
+      </div>
+      <div id="latestReadingsList" class="stack-list latest-grid">
+        {% for row in snapshot.latest_rows %}
+        <div class="stack-item muted">
+          <strong>{{ row.device }} / {{ row.variable }}</strong>
+          <span>{{ row.value }} | {{ row.timestamp }}</span>
         </div>
-        <div class="panel-head mt-3">
-          <div>
-            <p class="panel-kicker">Fleet</p>
-            <h2 class="panel-title">Contribution by Sector</h2>
-          </div>
-        </div>
-        <div class="table-responsive touch-table">
-          <table class="table table-dark table-hover align-middle mb-0" id="deviceStatusTable">
-            <thead>
-              <tr>
-                <th>Device</th>
-                <th>Power</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for device in snapshot.devices %}
-              <tr>
-                <td>{{ device.name }}</td>
-                <td>{{ "%.1f"|format(device.power_kw) }} kW</td>
-                <td>
-                  {% if device.alarm %}
-                  <span class="status-pill danger">Alarm</span>
-                  {% elif device.maintenance %}
-                  <span class="status-pill warning">Maint</span>
-                  {% elif device.energized %}
-                  <span class="status-pill success">Online</span>
-                  {% else %}
-                  <span class="status-pill muted">Idle</span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </aside>
-    </div>
+        {% endfor %}
+      </div>
+    </section>
   </section>
 </section>
 {% endblock %}
@@ -270,8 +172,15 @@
     const numeric = Number(value || 0);
     if (unit === "kWh" && Math.abs(numeric) >= 1000) return { value: formatNumber(numeric / 1000, 2), unit: "MWh" };
     if (unit === "kW" && Math.abs(numeric) >= 1000) return { value: formatNumber(numeric / 1000, 2), unit: "MW" };
-    const decimals = unit === "USD equivalent" || unit === "USD/day" ? 2 : 2;
-    return { value: formatNumber(numeric, decimals), unit };
+    return { value: formatNumber(numeric, unit === "PF" ? 3 : 2), unit };
+  }
+
+  function formatAxisValue(value, unit) {
+    const numeric = Number(value || 0);
+    if (unit === "kWh" && Math.abs(numeric) >= 1000) return `${formatNumber(numeric / 1000, 1)} MWh`;
+    if (unit === "kW" && Math.abs(numeric) >= 1000) return `${formatNumber(numeric / 1000, 1)} MW`;
+    if (!unit) return formatNumber(numeric, 1);
+    return `${formatNumber(numeric, 1)} ${unit}`;
   }
 
   function paletteForTheme(themeName) {
@@ -294,108 +203,54 @@
     return option && option.value ? option.textContent : "All Devices";
   }
 
-  function aggregated(rows, key) {
-    const grouped = new Map();
-    rows.forEach((row) => grouped.set(row.bucket, (grouped.get(row.bucket) || 0) + row[key]));
-    return Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }
-
-  function renewableSeries(snapshot) {
-    const rows = snapshot.source_mix;
-    const total = rows.reduce((sum, row) => sum + row.value, 0) || 1;
-    const renewable = rows.find((row) => row.label === "Renewable")?.value || 0;
-    return [renewable, Math.max(total - renewable, 0)];
-  }
-
-  function alertsSeries(snapshot) {
-    const values = snapshot.devices.map((device) => device.alarm ? 1 : 0);
-    const durations = snapshot.devices.map((device) => device.maintenance ? 12 : device.alarm ? 7 : 2);
-    return {
-      labels: snapshot.devices.map((device) => device.name),
-      values,
-      durations
-    };
-  }
-
   function chartOptions(unit, theme) {
     return {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: theme.text } } },
+      plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: theme.text }, grid: { color: theme.grid } },
-        y: { ticks: { color: theme.text, callback: (value) => `${value}${unit ? ` ${unit}` : ""}` }, grid: { color: theme.grid } }
+        y: { ticks: { color: theme.text, callback: (value) => formatAxisValue(value, unit) }, grid: { color: theme.grid } }
       }
     };
   }
 
-  function donutOptions(theme) {
-    return { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { color: theme.text } } } };
-  }
-
-  function chartPayloads(snapshot, themeName) {
+  function buildSignalPayloads(snapshot, themeName) {
     const theme = paletteForTheme(themeName);
-    const sales = snapshot.sales_trend.map((row) => [row.bucket, row.sales_amount]);
-    const costs = snapshot.costs_trend.map((row) => [row.bucket, row.avg_cost]);
-    const sectors = snapshot.sector_mix;
-    const alerts = alertsSeries(snapshot);
-    return {
-      consumptionLine: {
-        labels: snapshot.trend.map((row) => row.timestamp.slice(11, 16)),
-        datasets: [{ label: "Total Consumption", data: snapshot.trend.map((row) => row.power_kw), borderColor: theme.accent, backgroundColor: `${theme.accent}33`, fill: true, tension: 0.3, pointRadius: 0 }],
-        options: chartOptions("kW", theme)
-      },
-      sectorBar: {
-        labels: sectors.map((row) => row.label),
-        datasets: [{ label: "Consumption by Sector", data: sectors.map((row) => row.value), backgroundColor: theme.accent, borderRadius: 8 }],
-        options: chartOptions("kW", theme)
-      },
-      salesLine: {
-        labels: sales.map((row) => row[0]),
-        datasets: [{ label: "Total Sales", data: sales.map((row) => row[1]), borderColor: theme.accent2, backgroundColor: `${theme.accent2}33`, fill: true, tension: 0.3, pointRadius: 0 }],
-        options: chartOptions("USD", theme)
-      },
-      salesBar: {
-        labels: sectors.map((row) => row.label),
-        datasets: [{ label: "Sales by Sector", data: sectors.map((row) => Number((row.value * 0.14).toFixed(2))), backgroundColor: theme.accent2, borderRadius: 8 }],
-        options: chartOptions("USD", theme)
-      },
-      sourcesDonut: {
-        labels: snapshot.source_mix.map((row) => row.label),
-        datasets: [{ data: snapshot.source_mix.map((row) => row.value), backgroundColor: [theme.accent, theme.accent2, "#ffd166"], borderWidth: 0 }],
-        options: donutOptions(theme)
-      },
-      renewableDonut: {
-        labels: ["Renewable", "Conventional"],
-        datasets: [{ data: renewableSeries(snapshot), backgroundColor: [theme.accent, `${theme.text}22`], borderWidth: 0 }],
-        options: donutOptions(theme)
-      },
-      costsBar: {
-        labels: costs.map((row) => row[0]),
-        datasets: [{ label: "Avg Production Costs", data: costs.map((row) => row[1]), backgroundColor: theme.accent, borderRadius: 8 }],
-        options: chartOptions("USD", theme)
-      },
-      alertsArea: {
-        labels: alerts.labels,
-        datasets: [
-          { label: "Power Cuts", data: alerts.values, borderColor: "#ff6b6b", backgroundColor: "rgba(255,107,107,0.22)", fill: true, tension: 0.35 },
-          { label: "Duration", data: alerts.durations, borderColor: theme.accent2, backgroundColor: "rgba(0,0,0,0)", fill: false, tension: 0.35 }
-        ],
-        options: chartOptions("", theme)
-      }
-    };
+    const payloads = {};
+    (snapshot.chart_panels || []).forEach((panel) => {
+      payloads[panel.name] = {
+        type: panel.chart_type === "bar" ? "bar" : "line",
+        labels: panel.series.map((row) => row.timestamp.slice(11, 16)),
+        datasets: [{
+          label: panel.label,
+          data: panel.series.map((row) => row.value),
+          borderColor: theme.accent,
+          backgroundColor: `${theme.accent}33`,
+          fill: panel.chart_type !== "bar",
+          tension: 0.28,
+          pointRadius: 0,
+          borderRadius: 8
+        }],
+        options: chartOptions(panel.unit, theme)
+      };
+    });
+    return payloads;
   }
 
   function ensureCharts(snapshot, themeName) {
-    const payloads = chartPayloads(snapshot, themeName);
-    charts.consumptionLine = new Chart(document.getElementById("consumptionLineChart"), { type: "line", data: { labels: payloads.consumptionLine.labels, datasets: payloads.consumptionLine.datasets }, options: payloads.consumptionLine.options });
-    charts.sectorBar = new Chart(document.getElementById("sectorBarChart"), { type: "bar", data: { labels: payloads.sectorBar.labels, datasets: payloads.sectorBar.datasets }, options: payloads.sectorBar.options });
-    charts.salesLine = new Chart(document.getElementById("salesLineChart"), { type: "line", data: { labels: payloads.salesLine.labels, datasets: payloads.salesLine.datasets }, options: payloads.salesLine.options });
-    charts.salesBar = new Chart(document.getElementById("salesBarChart"), { type: "bar", data: { labels: payloads.salesBar.labels, datasets: payloads.salesBar.datasets }, options: payloads.salesBar.options });
-    charts.sourcesDonut = new Chart(document.getElementById("sourcesDonutChart"), { type: "doughnut", data: { labels: payloads.sourcesDonut.labels, datasets: payloads.sourcesDonut.datasets }, options: payloads.sourcesDonut.options });
-    charts.renewableDonut = new Chart(document.getElementById("renewableDonutChart"), { type: "doughnut", data: { labels: payloads.renewableDonut.labels, datasets: payloads.renewableDonut.datasets }, options: payloads.renewableDonut.options });
-    charts.costsBar = new Chart(document.getElementById("costsBarChart"), { type: "bar", data: { labels: payloads.costsBar.labels, datasets: payloads.costsBar.datasets }, options: payloads.costsBar.options });
-    charts.alertsArea = new Chart(document.getElementById("alertsAreaChart"), { type: "line", data: { labels: payloads.alertsArea.labels, datasets: payloads.alertsArea.datasets }, options: payloads.alertsArea.options });
+    const payloads = buildSignalPayloads(snapshot, themeName);
+    document.querySelectorAll(".signal-chart-card").forEach((card, index) => {
+      const name = card.dataset.chartName;
+      const canvas = card.querySelector("canvas");
+      const payload = payloads[name];
+      if (!payload || !canvas) return;
+      charts[name] = new Chart(canvas, {
+        type: payload.type,
+        data: { labels: payload.labels, datasets: payload.datasets },
+        options: payload.options
+      });
+    });
   }
 
   function applyTheme(themeName) {
@@ -412,32 +267,6 @@
     document.body.classList.toggle("display-mode-dark", !isLight);
     energyPage.dataset.mode = modeName;
     energyPage.dataset.logoMode = modeName;
-  }
-
-  function syncTabVisibility() {
-    const visibleTabs = Array.from(document.querySelectorAll(".tab-toggle:checked")).map((item) => item.value);
-    document.querySelectorAll("#energyTabNav .nav-link").forEach((button) => {
-      const tabId = button.id.replace("-tab", "");
-      button.parentElement.style.display = visibleTabs.includes(tabId) ? "" : "none";
-    });
-    document.querySelectorAll(".tab-pane").forEach((pane) => {
-      const tabId = pane.id.replace("-pane", "");
-      pane.style.display = visibleTabs.includes(tabId) ? "" : "none";
-    });
-    const firstVisible = document.querySelector('#energyTabNav .nav-link:not([style*="display: none"])');
-    if (firstVisible && !firstVisible.classList.contains("active")) bootstrap.Tab.getOrCreateInstance(firstVisible).show();
-    return visibleTabs;
-  }
-
-  function updateDeviceTable(devices) {
-    const tbody = document.querySelector("#deviceStatusTable tbody");
-    tbody.innerHTML = devices.map((device) => {
-      let status = '<span class="status-pill muted">Idle</span>';
-      if (device.alarm) status = '<span class="status-pill danger">Alarm</span>';
-      else if (device.maintenance) status = '<span class="status-pill warning">Maint</span>';
-      else if (device.energized) status = '<span class="status-pill success">Online</span>';
-      return `<tr><td>${device.name}</td><td>${device.power_kw.toFixed(1)} kW</td><td>${status}</td></tr>`;
-    }).join("");
   }
 
   function updateLatest(rows) {
@@ -469,18 +298,16 @@
         return;
       }
       if (key === "total_sales_usd") {
-        const formatted = formatMetric(value, "USD equivalent");
-        node.textContent = formatted.value;
-        if (unitNode) unitNode.textContent = formatted.unit;
+        node.textContent = formatNumber(value, 2);
+        if (unitNode) unitNode.textContent = "USD equivalent";
         return;
       }
       if (key === "avg_production_cost_usd") {
-        const formatted = formatMetric(value, "USD/day");
-        node.textContent = formatted.value;
-        if (unitNode) unitNode.textContent = formatted.unit;
+        node.textContent = formatNumber(value, 2);
+        if (unitNode) unitNode.textContent = "USD/day";
         return;
       }
-      if (node) node.textContent = typeof value === "number" ? formatNumber(value, 0) : value;
+      node.textContent = typeof value === "number" ? formatNumber(value, 0) : value;
     });
     const onlineUnit = document.querySelector('[data-kpi-unit="online_devices"]');
     if (onlineUnit) onlineUnit.textContent = `of ${snapshot.kpis.device_count}`;
@@ -519,32 +346,21 @@
   }
 
   function refreshCharts(snapshot, themeName) {
-    const payloads = chartPayloads(snapshot, themeName);
-    Object.entries(payloads).forEach(([key, payload]) => {
-      const chart = charts[key];
+    const payloads = buildSignalPayloads(snapshot, themeName);
+    Object.entries(payloads).forEach(([name, payload]) => {
+      const chart = charts[name];
       if (!chart) return;
+      if (chart.config.type !== payload.type) {
+        chart.destroy();
+        const canvas = document.querySelector(`[data-chart-name="${name}"] canvas`);
+        charts[name] = new Chart(canvas, { type: payload.type, data: { labels: payload.labels, datasets: payload.datasets }, options: payload.options });
+        return;
+      }
       chart.data.labels = payload.labels;
       chart.data.datasets = payload.datasets;
       chart.options = payload.options;
       chart.update("none");
     });
-  }
-
-  async function persistPreferences() {
-    const payload = {
-      theme: initialPreferences.theme,
-      mode: initialPreferences.mode,
-      refresh_seconds: Number(initialPreferences.refresh_seconds),
-      kiosk_theme: initialPreferences.kiosk_theme,
-      kiosk_mode: initialPreferences.kiosk_mode,
-      visible_tabs: syncTabVisibility()
-    };
-    await fetch("/api/dashboard/preferences", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    initialPreferences.visible_tabs = payload.visible_tabs;
   }
 
   async function refreshRealtime() {
@@ -558,7 +374,6 @@
     currentSnapshot = snapshot;
     updateKpis(snapshot);
     updateSelectionKpis(snapshot);
-    updateDeviceTable(snapshot.devices);
     updateLatest(snapshot.latest_rows);
     refreshCharts(snapshot, initialPreferences.theme);
     const url = params.toString() ? `/?${params.toString()}` : "/";
@@ -581,13 +396,12 @@
   applyTheme(initialPreferences.theme);
   applyMode(initialPreferences.mode);
   ensureCharts(initialSnapshot, initialPreferences.theme);
-  syncTabVisibility();
   updateKpis(initialSnapshot);
   updateSelectionKpis(initialSnapshot);
+  updateLatest(initialSnapshot.latest_rows);
   resetRefreshLoop();
 
   document.getElementById("deviceSelect").addEventListener("input", handleDeviceChange);
   document.getElementById("deviceSelect").addEventListener("change", handleDeviceChange);
-  document.querySelectorAll(".tab-toggle").forEach((input) => input.addEventListener("change", persistPreferences));
 </script>
 {% endblock %}

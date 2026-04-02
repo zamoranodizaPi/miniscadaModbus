@@ -55,6 +55,48 @@
     <input class="form-control" name="new_password" type="password">
   </div>
   <div class="col-12">
+    <div class="panel-card">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker mb-2">Web Charts</p>
+          <h2 class="panel-title mb-0">Signal Grid Configuration</h2>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Visible</th>
+              <th>Variable</th>
+              <th>Graph Type</th>
+              <th>Order</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for chart in chart_variables %}
+            <tr>
+              <td>
+                <input class="form-check-input" type="checkbox" name="chart_enabled__{{ chart.name }}" {% if chart.enabled %}checked{% endif %}>
+              </td>
+              <td>{{ chart.name }}</td>
+              <td>
+                <select class="form-select" name="chart_type__{{ chart.name }}">
+                  {% for chart_type in ['line', 'bar'] %}
+                  <option value="{{ chart_type }}" {% if chart.chart_type == chart_type %}selected{% endif %}>{{ 'Trend' if chart_type == 'line' else 'Bars' }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <input class="form-control" type="number" min="1" name="chart_order__{{ chart.name }}" value="{{ chart.order }}">
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-12">
     <button class="btn btn-primary" type="submit">Guardar</button>
   </div>
 </form>
