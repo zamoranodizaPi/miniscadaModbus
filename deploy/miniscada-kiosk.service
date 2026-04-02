@@ -1,8 +1,8 @@
 [Unit]
 Description=Mini SCADA Local Kiosk Display
-After=network-online.target miniscada-web.service
+After=graphical.target network-online.target miniscada-web.service
 Requires=miniscada-web.service
-Wants=network-online.target
+Wants=network-online.target graphical.target
 
 [Service]
 Type=simple
@@ -10,14 +10,9 @@ User=__APP_USER__
 WorkingDirectory=__APP_DIR__
 EnvironmentFile=/etc/default/miniscada
 Environment=DISPLAY=:0
-TTYPath=/dev/tty1
-TTYReset=yes
-TTYVHangup=yes
-TTYVTDisallocate=yes
-StandardInput=tty
-StandardOutput=journal
-StandardError=journal
-ExecStart=/usr/bin/xinit __APP_DIR__/scripts/start_kiosk.sh -- :0 vt1 -keeptty -nocursor
+Environment=XAUTHORITY=/home/__APP_USER__/.Xauthority
+ExecStartPre=/bin/sleep 8
+ExecStart=__APP_DIR__/scripts/start_kiosk.sh
 Restart=always
 RestartSec=5
 

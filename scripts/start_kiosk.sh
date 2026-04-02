@@ -3,6 +3,7 @@ set -euo pipefail
 
 WEB_PORT="${MINISCADA_WEB_PORT:-8000}"
 LOCAL_URL="${MINISCADA_LOCAL_DASHBOARD_URL:-http://127.0.0.1:${WEB_PORT}/local}"
+DISPLAY_VALUE="${DISPLAY:-:0}"
 
 find_browser() {
   for candidate in chromium-browser chromium google-chrome; do
@@ -19,16 +20,21 @@ BROWSER="$(find_browser)" || {
   exit 1
 }
 
+for _ in $(seq 1 60); do
+  if [[ -S "/tmp/.X11-unix/${DISPLAY_VALUE#:}" ]]; then
+    break
+  fi
+  sleep 1
+done
+
+export DISPLAY="${DISPLAY_VALUE}"
+
 xset -dpms
 xset s off
 xset s noblank
 
 if command -v unclutter >/dev/null 2>&1; then
   unclutter -idle 0.5 -root &
-fi
-
-if command -v openbox-session >/dev/null 2>&1; then
-  openbox-session &
 fi
 
 exec "${BROWSER}" \
