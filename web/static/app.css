@@ -70,6 +70,28 @@ a {
   color: var(--text);
 }
 
+.app-logo-corner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 96px;
+}
+
+.app-logo {
+  display: none;
+  max-width: 82px;
+  max-height: 38px;
+  object-fit: contain;
+}
+
+.logo-mode-light .app-logo-light {
+  display: block;
+}
+
+.logo-mode-dark .app-logo-dark {
+  display: block;
+}
+
 .hero-panel,
 .panel-card,
 .metric-card,
@@ -877,6 +899,18 @@ canvas {
   text-align: right;
   font-size: 1rem;
   font-weight: 700;
+}
+
+.local-energy-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+}
+
+.kiosk-logo .app-logo {
+  max-width: 110px;
+  max-height: 42px;
 }
 
 .local-energy-kpis {

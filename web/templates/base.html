@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
     {% block head %}{% endblock %}
   </head>
-  <body>
+  <body class="logo-mode-dark">
     <nav class="navbar navbar-expand-lg scada-navbar sticky-top">
       <div class="container-fluid px-4">
         <a class="navbar-brand" href="{{ url_for('index') }}">
@@ -36,6 +36,10 @@
           </div>
         </div>
         {% endif %}
+        <div class="app-logo-corner">
+          <img class="app-logo app-logo-light" src="{{ url_for('static', filename='branding/logo_light.png') }}" alt="Logo light" onerror="this.style.display='none'">
+          <img class="app-logo app-logo-dark" src="{{ url_for('static', filename='branding/logo_dark.png') }}" alt="Logo dark" onerror="this.style.display='none'">
+        </div>
       </div>
     </nav>
 

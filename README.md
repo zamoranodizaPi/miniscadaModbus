@@ -133,6 +133,9 @@ La web principal ahora expone un dashboard energético con:
 - Selección múltiple de dispositivos.
 - Esquemas de color `orange`, `blue`, `green`, `black` y `gray`, persistidos desde la interfaz.
 - Navegación optimizada para pantalla touch `1024x600` con scroll horizontal y vertical.
+- Soporte para logos en esquina superior derecha:
+  `web/static/branding/logo_light.png`
+  `web/static/branding/logo_dark.png`
 
 ## API REST autenticada
 

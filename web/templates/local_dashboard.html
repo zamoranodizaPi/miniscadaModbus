@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   </head>
-  <body class="local-screen energy-page" data-theme="green">
+  <body class="local-screen energy-page logo-mode-dark" data-theme="green">
     <main class="local-energy-shell">
       <section class="local-energy-header">
         <div>
@@ -18,7 +18,13 @@
           <h1 class="local-energy-title">Energy Management Dashboard</h1>
           <p class="local-energy-copy">Vista local de operación para Raspberry Pi con KPIs, consumo, ventas equivalentes y estado de tableros.</p>
         </div>
-        <div class="local-energy-clock" id="localClock">{{ now.strftime("%Y-%m-%d %H:%M:%S UTC") }}</div>
+        <div class="local-energy-header-right">
+          <div class="local-energy-clock" id="localClock">{{ now.strftime("%Y-%m-%d %H:%M:%S UTC") }}</div>
+          <div class="app-logo-corner kiosk-logo">
+            <img class="app-logo app-logo-light" src="{{ url_for('static', filename='branding/logo_light.png') }}" alt="Logo light" onerror="this.style.display='none'">
+            <img class="app-logo app-logo-dark" src="{{ url_for('static', filename='branding/logo_dark.png') }}" alt="Logo dark" onerror="this.style.display='none'">
+          </div>
+        </div>
       </section>
 
       <section class="local-energy-kpis">

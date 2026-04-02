@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Energy Management Dashboard{% endblock %}
 {% block content %}
-<section class="energy-page" data-theme="{{ preferences.theme }}">
+<section class="energy-page" data-theme="{{ preferences.theme }}" data-logo-mode="dark">
   <header class="energy-header">
     <div>
       <p class="eyebrow mb-2">Enterprise Energy</p>
@@ -335,7 +335,11 @@
   }
 
   function applyTheme(themeName) {
-    document.querySelector(".energy-page").dataset.theme = themeName;
+    const energyPage = document.querySelector(".energy-page");
+    energyPage.dataset.theme = themeName;
+    const lightThemes = new Set(["gray"]);
+    document.body.classList.toggle("logo-mode-light", lightThemes.has(themeName));
+    document.body.classList.toggle("logo-mode-dark", !lightThemes.has(themeName));
   }
 
   function syncTabVisibility() {
