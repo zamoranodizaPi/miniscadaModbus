@@ -12,6 +12,11 @@ from simulator.catalog import PM8000_VARIABLES, SIMULATED_METERS
 def seed_pm8000_simulators() -> None:
     init_database()
     with session_scope() as session:
+        demo_device = session.scalar(select(Device).where(Device.name == "demo-plc"))
+        if demo_device is not None:
+            demo_device.enabled = False
+            session.add(demo_device)
+
         existing_devices = {
             device.name: device
             for device in session.scalars(select(Device).options(selectinload(Device.variables))).all()

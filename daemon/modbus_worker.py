@@ -51,7 +51,7 @@ class ModbusReader:
         read_fn = getattr(client, function_name)
 
         if variable.function_code in {"coil", "discrete_input"}:
-            response = read_fn(address=variable.address, count=1, device_id=device.unit_id)
+            response = read_fn(address=variable.address, count=1, slave=device.unit_id)
             if response.isError():
                 raise RuntimeError(str(response))
             raw = bool(response.bits[0])
@@ -59,7 +59,7 @@ class ModbusReader:
             scaled = (value * variable.scale) + variable.offset
             return scaled, str(raw)
 
-        response = read_fn(address=variable.address, count=variable.register_count, device_id=device.unit_id)
+        response = read_fn(address=variable.address, count=variable.register_count, slave=device.unit_id)
         if response.isError():
             raise RuntimeError(str(response))
 
