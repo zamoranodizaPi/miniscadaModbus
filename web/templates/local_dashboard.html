@@ -3,110 +3,126 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Mini SCADA Local</title>
+    <title>Energy Management Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
-    <style>
-      html, body {
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
-    </style>
   </head>
-  <body class="local-screen">
-    <main class="local-shell">
-      <section class="local-topbar">
+  <body class="local-screen energy-page" data-theme="green">
+    <main class="local-energy-shell">
+      <section class="local-energy-header">
         <div>
-          <div class="local-tag">Mini SCADA Embedded Monitor</div>
-          <h1 class="local-title">Centro de energía en tiempo real</h1>
+          <div class="local-tag">Embedded Enterprise Energy</div>
+          <h1 class="local-energy-title">Energy Management Dashboard</h1>
+          <p class="local-energy-copy">Vista local de operación para Raspberry Pi con KPIs, consumo, ventas equivalentes y estado de tableros.</p>
         </div>
-        <div class="local-clock" id="localClock">{{ now.strftime("%Y-%m-%d %H:%M:%S UTC") }}</div>
+        <div class="local-energy-clock" id="localClock">{{ now.strftime("%Y-%m-%d %H:%M:%S UTC") }}</div>
       </section>
 
-      <section class="local-kpi-grid">
-        <article class="local-kpi primary">
-          <span>Potencia total</span>
-          <strong data-kpi="total_power_kw">{{ "%.1f"|format(snapshot.kpis.total_power_kw) }}</strong>
-          <small>kW</small>
-        </article>
-        <article class="local-kpi">
-          <span>Energía diaria</span>
-          <strong data-kpi="daily_energy_kwh">{{ "%.1f"|format(snapshot.kpis.daily_energy_kwh) }}</strong>
+      <section class="local-energy-kpis">
+        <article class="local-energy-kpi primary">
+          <span>Total Consumption</span>
+          <strong data-kpi="total_consumption_kwh">{{ "%.1f"|format(snapshot.kpis.total_consumption_kwh) }}</strong>
           <small>kWh</small>
         </article>
-        <article class="local-kpi">
-          <span>Voltaje medio</span>
+        <article class="local-energy-kpi">
+          <span>Total Sales</span>
+          <strong data-kpi="total_sales_usd">{{ "%.1f"|format(snapshot.kpis.total_sales_usd) }}</strong>
+          <small>USD</small>
+        </article>
+        <article class="local-energy-kpi">
+          <span>Avg Production Costs</span>
+          <strong data-kpi="avg_production_cost_usd">{{ "%.1f"|format(snapshot.kpis.avg_production_cost_usd) }}</strong>
+          <small>USD/day</small>
+        </article>
+        <article class="local-energy-kpi">
+          <span>Avg Voltage</span>
           <strong data-kpi="avg_voltage_v">{{ "%.1f"|format(snapshot.kpis.avg_voltage_v) }}</strong>
           <small>V</small>
         </article>
-        <article class="local-kpi">
-          <span>Corriente media</span>
+        <article class="local-energy-kpi">
+          <span>Avg Current</span>
           <strong data-kpi="avg_current_a">{{ "%.1f"|format(snapshot.kpis.avg_current_a) }}</strong>
           <small>A</small>
         </article>
-        <article class="local-kpi secondary">
-          <span>Equipos en línea</span>
+        <article class="local-energy-kpi">
+          <span>Devices Online</span>
           <strong data-kpi="online_devices">{{ snapshot.kpis.online_devices }}</strong>
-          <small>de {{ snapshot.kpis.device_count }}</small>
-        </article>
-        <article class="local-kpi secondary">
-          <span>Alertas</span>
-          <strong data-kpi="active_alerts">{{ snapshot.kpis.active_alerts }}</strong>
-          <small>activas</small>
+          <small>of {{ snapshot.kpis.device_count }}</small>
         </article>
       </section>
 
-      <section class="local-main-grid">
-        <div class="local-panel local-trend">
-          <div class="local-panel-head">
-            <span>Tendencia de potencia</span>
-            <strong>Últimas 3 horas</strong>
+      <section class="local-energy-main">
+        <div class="local-energy-panel wide">
+          <div class="local-energy-panel-head">
+            <div>
+              <span>Realtime Consumption</span>
+              <strong>Total Consumption</strong>
+            </div>
+            <small>Last 3 hours</small>
           </div>
-          <canvas id="localTrendChart"></canvas>
+          <canvas id="localConsumptionChart"></canvas>
         </div>
 
-        <div class="local-panel local-status">
-          <div class="local-panel-head">
-            <span>Estado de tableros</span>
-            <strong id="localSummaryText">{{ snapshot.kpis.online_devices }} en línea</strong>
+        <div class="local-energy-panel narrow">
+          <div class="local-energy-panel-head">
+            <div>
+              <span>Energy Sources</span>
+              <strong>Contribution Renewable</strong>
+            </div>
+            <small>Live mix</small>
           </div>
-          <div class="local-device-grid" id="localDeviceGrid">
-            {% for device in snapshot.devices[:8] %}
-            <article class="local-device-card {% if device.alarm %}danger{% elif device.maintenance %}warning{% else %}success{% endif %}">
-              <header>{{ device.name }}</header>
-              <div class="local-device-metric">{{ "%.1f"|format(device.power_kw) }} kW</div>
-              <footer>
-                <span>{{ "%.0f"|format(device.voltage_v) }} V</span>
-                <span>{{ "%.0f"|format(device.current_a) }} A</span>
-              </footer>
-            </article>
+          <div class="local-donut-grid">
+            <canvas id="localSourceChart"></canvas>
+            <canvas id="localRenewableChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="local-energy-bottom">
+        <div class="local-energy-panel compact">
+          <div class="local-energy-panel-head">
+            <div>
+              <span>Contribution by Sector</span>
+              <strong>Consumption by Sector</strong>
+            </div>
+          </div>
+          <canvas id="localSectorChart"></canvas>
+        </div>
+
+        <div class="local-energy-panel compact">
+          <div class="local-energy-panel-head">
+            <div>
+              <span>Latest Readings</span>
+              <strong>Embedded Feed</strong>
+            </div>
+          </div>
+          <div id="localReadings" class="local-reading-list">
+            {% for row in snapshot.latest_rows[:8] %}
+            <div class="local-reading-item">
+              <strong>{{ row.device }} / {{ row.variable }}</strong>
+              <span>{{ row.value }} | {{ row.timestamp }}</span>
+            </div>
             {% endfor %}
           </div>
         </div>
-      </section>
 
-      <section class="local-footer-grid">
-        <div class="local-strip">
-          <span class="local-strip-title">Alertas</span>
-          <div id="localAlerts" class="local-strip-body">
-            {% if snapshot.alerts %}
-              {% for alert in snapshot.alerts %}
-              <span class="local-pill {{ alert.severity }}">{{ alert.device }}: {{ alert.message }}</span>
-              {% endfor %}
-            {% else %}
-              <span class="local-pill success">Sin alertas activas</span>
-            {% endif %}
+        <div class="local-energy-panel compact">
+          <div class="local-energy-panel-head">
+            <div>
+              <span>Fleet Status</span>
+              <strong>Devices and Alerts</strong>
+            </div>
           </div>
-        </div>
-        <div class="local-strip">
-          <span class="local-strip-title">Últimas lecturas</span>
-          <div id="localReadings" class="local-strip-body">
-            {% for row in snapshot.latest_rows[:6] %}
-            <span class="local-pill muted">{{ row.device }} / {{ row.variable }} = {{ row.value }}</span>
+          <div class="local-status-grid" id="localDeviceGrid">
+            {% for device in snapshot.devices[:6] %}
+            <article class="local-status-card {% if device.alarm %}danger{% elif device.maintenance %}warning{% else %}success{% endif %}">
+              <header>{{ device.name }}</header>
+              <strong>{{ "%.1f"|format(device.power_kw) }} kW</strong>
+              <footer>{{ "%.0f"|format(device.voltage_v) }} V | {{ "%.0f"|format(device.current_a) }} A</footer>
+            </article>
             {% endfor %}
           </div>
         </div>
@@ -115,97 +131,161 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script>
-      const localSnapshot = {{ snapshot|tojson }};
+      let localSnapshot = {{ snapshot|tojson }};
 
-      const localTrendChart = new Chart(document.getElementById("localTrendChart"), {
+      function sourceValues(snapshot) {
+        return snapshot.source_mix.map((row) => row.value);
+      }
+
+      function renewableValues(snapshot) {
+        const total = snapshot.source_mix.reduce((sum, row) => sum + row.value, 0) || 1;
+        const renewable = snapshot.source_mix.find((row) => row.label === "Renewable")?.value || 0;
+        return [renewable, Math.max(total - renewable, 0)];
+      }
+
+      const chartTheme = {
+        accent: "#5fd08d",
+        accent2: "#22b8cf",
+        text: "#e7fff1",
+        grid: "rgba(255,255,255,0.06)"
+      };
+
+      const localConsumptionChart = new Chart(document.getElementById("localConsumptionChart"), {
         type: "line",
         data: {
           labels: localSnapshot.trend.map((row) => row.timestamp.slice(11, 16)),
           datasets: [{
+            label: "Consumption",
             data: localSnapshot.trend.map((row) => row.power_kw),
-            borderColor: "#5fd08d",
+            borderColor: chartTheme.accent,
             backgroundColor: "rgba(95, 208, 141, 0.18)",
             fill: true,
             tension: 0.3,
             pointRadius: 0
           }]
         },
-        options: {
+        options: localLineOptions()
+      });
+
+      const localSourceChart = new Chart(document.getElementById("localSourceChart"), {
+        type: "doughnut",
+        data: {
+          labels: localSnapshot.source_mix.map((row) => row.label),
+          datasets: [{ data: sourceValues(localSnapshot), backgroundColor: [chartTheme.accent, chartTheme.accent2, "#ffd166"], borderWidth: 0 }]
+        },
+        options: localDonutOptions()
+      });
+
+      const localRenewableChart = new Chart(document.getElementById("localRenewableChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["Renewable", "Conventional"],
+          datasets: [{ data: renewableValues(localSnapshot), backgroundColor: [chartTheme.accent, "rgba(255,255,255,0.12)"], borderWidth: 0 }]
+        },
+        options: localDonutOptions()
+      });
+
+      const localSectorChart = new Chart(document.getElementById("localSectorChart"), {
+        type: "bar",
+        data: {
+          labels: localSnapshot.sector_mix.map((row) => row.label),
+          datasets: [{ label: "Sector", data: localSnapshot.sector_mix.map((row) => row.value), backgroundColor: chartTheme.accent2, borderRadius: 8 }]
+        },
+        options: localBarOptions()
+      });
+
+      function localLineOptions() {
+        return {
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            x: { ticks: { color: "#8ea8b2", maxRotation: 0 }, grid: { color: "rgba(255,255,255,0.04)" } },
-            y: { ticks: { color: "#8ea8b2" }, grid: { color: "rgba(255,255,255,0.04)" } }
+            x: { ticks: { color: chartTheme.text, maxRotation: 0 }, grid: { color: chartTheme.grid } },
+            y: { ticks: { color: chartTheme.text }, grid: { color: chartTheme.grid } }
           }
-        }
-      });
+        };
+      }
+
+      function localDonutOptions() {
+        return {
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "bottom", labels: { color: chartTheme.text, boxWidth: 10 } } }
+        };
+      }
+
+      function localBarOptions() {
+        return {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: chartTheme.text, maxRotation: 0, minRotation: 0 }, grid: { display: false } },
+            y: { ticks: { color: chartTheme.text }, grid: { color: chartTheme.grid } }
+          }
+        };
+      }
 
       function syncClock() {
         document.getElementById("localClock").textContent = new Date().toLocaleString("sv-SE").replace("T", " ");
       }
 
-      function renderLocalDevices(devices) {
-        const grid = document.getElementById("localDeviceGrid");
-        grid.innerHTML = devices.slice(0, 8).map((device) => {
+      function updateKpis(snapshot) {
+        Object.entries(snapshot.kpis).forEach(([key, value]) => {
+          const node = document.querySelector(`[data-kpi="${key}"]`);
+          if (node) node.textContent = typeof value === "number" ? value.toFixed(1).replace(/\.0$/, "") : value;
+        });
+      }
+
+      function updateReadings(snapshot) {
+        const container = document.getElementById("localReadings");
+        container.innerHTML = snapshot.latest_rows.slice(0, 8).map((row) => `
+          <div class="local-reading-item">
+            <strong>${row.device} / ${row.variable}</strong>
+            <span>${row.value} | ${row.timestamp}</span>
+          </div>
+        `).join("");
+      }
+
+      function updateDevices(snapshot) {
+        const container = document.getElementById("localDeviceGrid");
+        container.innerHTML = snapshot.devices.slice(0, 6).map((device) => {
           let state = "success";
           if (device.alarm) state = "danger";
           else if (device.maintenance) state = "warning";
           return `
-            <article class="local-device-card ${state}">
+            <article class="local-status-card ${state}">
               <header>${device.name}</header>
-              <div class="local-device-metric">${device.power_kw.toFixed(1)} kW</div>
-              <footer>
-                <span>${device.voltage_v.toFixed(0)} V</span>
-                <span>${device.current_a.toFixed(0)} A</span>
-              </footer>
+              <strong>${device.power_kw.toFixed(1)} kW</strong>
+              <footer>${device.voltage_v.toFixed(0)} V | ${device.current_a.toFixed(0)} A</footer>
             </article>
           `;
         }).join("");
       }
 
-      function renderLocalPills(containerId, rows, mapper, fallbackClass, fallbackText) {
-        const node = document.getElementById(containerId);
-        if (!rows.length) {
-          node.innerHTML = `<span class="local-pill ${fallbackClass}">${fallbackText}</span>`;
-          return;
-        }
-        node.innerHTML = rows.map(mapper).join("");
-      }
+      function updateCharts(snapshot) {
+        localConsumptionChart.data.labels = snapshot.trend.map((row) => row.timestamp.slice(11, 16));
+        localConsumptionChart.data.datasets[0].data = snapshot.trend.map((row) => row.power_kw);
+        localConsumptionChart.update();
 
-      function updateLocal(snapshot) {
-        Object.entries(snapshot.kpis).forEach(([key, value]) => {
-          const node = document.querySelector(`[data-kpi="${key}"]`);
-          if (node) node.textContent = typeof value === "number" ? value.toFixed(1).replace(/\.0$/, "") : value;
-        });
+        localSourceChart.data.labels = snapshot.source_mix.map((row) => row.label);
+        localSourceChart.data.datasets[0].data = sourceValues(snapshot);
+        localSourceChart.update();
 
-        document.getElementById("localSummaryText").textContent = `${snapshot.kpis.online_devices} en línea`;
-        localTrendChart.data.labels = snapshot.trend.map((row) => row.timestamp.slice(11, 16));
-        localTrendChart.data.datasets[0].data = snapshot.trend.map((row) => row.power_kw);
-        localTrendChart.update();
+        localRenewableChart.data.datasets[0].data = renewableValues(snapshot);
+        localRenewableChart.update();
 
-        renderLocalDevices(snapshot.devices);
-        renderLocalPills(
-          "localAlerts",
-          snapshot.alerts,
-          (row) => `<span class="local-pill ${row.severity}">${row.device}: ${row.message}</span>`,
-          "success",
-          "Sin alertas activas"
-        );
-        renderLocalPills(
-          "localReadings",
-          snapshot.latest_rows.slice(0, 6),
-          (row) => `<span class="local-pill muted">${row.device} / ${row.variable} = ${row.value}</span>`,
-          "muted",
-          "Esperando lecturas"
-        );
+        localSectorChart.data.labels = snapshot.sector_mix.map((row) => row.label);
+        localSectorChart.data.datasets[0].data = snapshot.sector_mix.map((row) => row.value);
+        localSectorChart.update();
       }
 
       async function refreshLocal() {
         const response = await fetch("/api/local/realtime", { headers: { "X-Requested-With": "fetch" } });
         if (!response.ok) return;
-        const payload = await response.json();
-        updateLocal(payload);
+        localSnapshot = await response.json();
         syncClock();
+        updateKpis(localSnapshot);
+        updateReadings(localSnapshot);
+        updateDevices(localSnapshot);
+        updateCharts(localSnapshot);
       }
 
       syncClock();
