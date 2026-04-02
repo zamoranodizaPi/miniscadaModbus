@@ -40,6 +40,18 @@ export MINISCADA_SECRET_KEY='cambia-esto'
 ./scripts/install.sh
 ```
 
+## Actualización del sistema desplegado
+
+Para actualizar una Raspberry ya instalada sin rehacer todo el proceso:
+
+```bash
+git pull origin main
+chmod +x scripts/update.sh
+./scripts/update.sh
+```
+
+Este script sincroniza el código hacia `/opt/miniscadaModbus`, actualiza dependencias del entorno virtual, vuelve a sembrar los simuladores y reinicia los servicios.
+
 ## Ejecución manual
 
 Web:
