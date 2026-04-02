@@ -107,8 +107,8 @@
         <label class="form-label">{{ t.configured_signals }}</label>
         <div class="signal-toggle-grid" id="signalSelectionGrid">
           {% for chart in preferences.chart_variables %}
-          <label class="signal-toggle-chip">
-            <input class="signal-visibility-toggle" type="checkbox" value="{{ chart.name }}" {% if chart.enabled %}checked{% endif %}>
+          <label class="signal-toggle-row">
+            <input class="form-check-input signal-visibility-toggle" type="checkbox" value="{{ chart.name }}" {% if chart.enabled %}checked{% endif %}>
             <span>{{ humanize_variable_name(chart.name) }}</span>
           </label>
           {% endfor %}
@@ -233,6 +233,10 @@
     return {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: "nearest",
+        intersect: false
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -267,6 +271,9 @@
           fill: panel.chart_type !== "bar",
           tension: 0.28,
           pointRadius: 0,
+          pointHitRadius: 18,
+          pointHoverRadius: 4,
+          spanGaps: true,
           borderRadius: 8
         }],
         options: chartOptions(panel.unit, theme)
@@ -351,6 +358,13 @@
     const count = document.querySelectorAll(".signal-visibility-toggle:checked").length;
     const summary = document.getElementById("configuredSignalsSummary");
     if (summary) summary.textContent = `${count} ${localeTexts.graphs_active}`;
+  }
+
+  function filteredSnapshotByVisibility(snapshot, enabledNames) {
+    return {
+      ...snapshot,
+      chart_panels: (snapshot.chart_panels || []).filter((panel) => enabledNames.has(panel.name))
+    };
   }
 
   function updateKpis(snapshot) {
@@ -450,6 +464,9 @@
       enabled: enabledNames.has(chart.name)
     }));
     updateSignalSummary();
+    currentSnapshot = filteredSnapshotByVisibility(currentSnapshot, enabledNames);
+    syncChartGrid(currentSnapshot);
+    refreshCharts(currentSnapshot, initialPreferences.theme);
     await fetch("/api/dashboard/preferences", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
