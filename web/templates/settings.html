@@ -19,10 +19,34 @@
     </select>
   </div>
   <div class="col-md-4">
+    <label class="form-label">Modo dashboard</label>
+    <select class="form-select" name="dashboard_mode">
+      {% for mode in ['dark', 'light'] %}
+      <option value="{{ mode }}" {% if dashboard_preferences.mode == mode %}selected{% endif %}>{{ mode|capitalize }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
     <label class="form-label">Refresh dashboard</label>
     <select class="form-select" name="dashboard_refresh_seconds">
       {% for seconds in [5, 10, 15] %}
       <option value="{{ seconds }}" {% if dashboard_preferences.refresh_seconds == seconds %}selected{% endif %}>{{ seconds }} s</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Color scheme kiosk</label>
+    <select class="form-select" name="kiosk_theme">
+      {% for theme in ['orange', 'blue', 'green', 'black', 'gray'] %}
+      <option value="{{ theme }}" {% if dashboard_preferences.kiosk_theme == theme %}selected{% endif %}>{{ theme|capitalize }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Modo kiosk</label>
+    <select class="form-select" name="kiosk_mode">
+      {% for mode in ['dark', 'light'] %}
+      <option value="{{ mode }}" {% if dashboard_preferences.kiosk_mode == mode %}selected{% endif %}>{{ mode|capitalize }}</option>
       {% endfor %}
     </select>
   </div>

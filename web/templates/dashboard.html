@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Energy Management{% endblock %}
+{% set total_consumption_display = format_compact_metric(snapshot.kpis.total_consumption_kwh, 'kWh', 2) %}
+{% set avg_voltage_display = format_compact_metric(snapshot.kpis.avg_voltage_v, 'V', 2) %}
+{% set avg_current_display = format_compact_metric(snapshot.kpis.avg_current_a, 'A', 2) %}
 {% block content %}
-<section class="energy-page" data-theme="{{ preferences.theme }}" data-logo-mode="dark">
+<section class="energy-page" data-theme="{{ preferences.theme }}" data-mode="{{ preferences.mode }}" data-logo-mode="{{ preferences.mode }}">
   <header class="energy-header">
     <div class="energy-header-copy">
       <h1 class="energy-title">Energy Management</h1>
@@ -22,23 +25,6 @@
         {% endfor %}
       </select>
     </div>
-    <div class="toolbar-group">
-      <label class="form-label">Export</label>
-      <div class="dropdown">
-        <button class="btn btn-outline-light dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          Export
-        </button>
-        <ul class="dropdown-menu dropdown-menu-dark w-100">
-          <li><a class="dropdown-item" href="{{ url_for('energy_report_export', period='daily') }}">Daily CSV</a></li>
-          <li><a class="dropdown-item" href="{{ url_for('readings_export') }}">Readings CSV</a></li>
-          <li><a class="dropdown-item" href="{{ url_for('readings') }}">Open History</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="toolbar-group">
-      <label class="form-label">Configuration</label>
-      <a class="btn btn-outline-light" href="{{ url_for('app_settings') }}">Open Configuration</a>
-    </div>
     <div class="toolbar-group wide">
       <label class="form-label">Visible Tabs</label>
       <div class="tab-toggle-grid">
@@ -56,33 +42,33 @@
     <div class="energy-grid">
       <article class="kpi-energy-card primary">
         <span>Total Consumption</span>
-        <strong data-kpi="total_consumption_kwh">{{ "%.2f"|format(snapshot.kpis.total_consumption_kwh) }}</strong>
-        <small>kWh</small>
+        <strong data-kpi="total_consumption_kwh">{{ total_consumption_display[0] }}</strong>
+        <small data-kpi-unit="total_consumption_kwh">{{ total_consumption_display[1] }}</small>
       </article>
       <article class="kpi-energy-card">
         <span>Total Sales</span>
-        <strong data-kpi="total_sales_usd">{{ "%.2f"|format(snapshot.kpis.total_sales_usd) }}</strong>
-        <small>USD equivalent</small>
+        <strong data-kpi="total_sales_usd">{{ format_compact_value(snapshot.kpis.total_sales_usd, 2) }}</strong>
+        <small data-kpi-unit="total_sales_usd">USD equivalent</small>
       </article>
       <article class="kpi-energy-card">
         <span>Avg Production Costs</span>
-        <strong data-kpi="avg_production_cost_usd">{{ "%.2f"|format(snapshot.kpis.avg_production_cost_usd) }}</strong>
-        <small>USD/day</small>
+        <strong data-kpi="avg_production_cost_usd">{{ format_compact_value(snapshot.kpis.avg_production_cost_usd, 2) }}</strong>
+        <small data-kpi-unit="avg_production_cost_usd">USD/day</small>
       </article>
       <article class="kpi-energy-card">
         <span>Avg Voltage</span>
-        <strong data-kpi="avg_voltage_v">{{ "%.2f"|format(snapshot.kpis.avg_voltage_v) }}</strong>
-        <small>V</small>
+        <strong data-kpi="avg_voltage_v">{{ avg_voltage_display[0] }}</strong>
+        <small data-kpi-unit="avg_voltage_v">{{ avg_voltage_display[1] }}</small>
       </article>
       <article class="kpi-energy-card">
         <span>Avg Current</span>
-        <strong data-kpi="avg_current_a">{{ "%.2f"|format(snapshot.kpis.avg_current_a) }}</strong>
-        <small>A</small>
+        <strong data-kpi="avg_current_a">{{ avg_current_display[0] }}</strong>
+        <small data-kpi-unit="avg_current_a">{{ avg_current_display[1] }}</small>
       </article>
       <article class="kpi-energy-card">
         <span>Online Devices</span>
         <strong data-kpi="online_devices">{{ snapshot.kpis.online_devices }}</strong>
-        <small>of {{ snapshot.kpis.device_count }}</small>
+        <small data-kpi-unit="online_devices">of {{ snapshot.kpis.device_count }}</small>
       </article>
     </div>
 
@@ -234,6 +220,30 @@
   let currentSnapshot = initialSnapshot;
   let refreshHandle = null;
 
+  function formatNumber(value, decimals = 2) {
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    }).format(value);
+  }
+
+  function formatMetric(value, unit) {
+    const numeric = Number(value || 0);
+    if (unit === "kWh" && Math.abs(numeric) >= 1000) return { value: formatNumber(numeric / 1000, 2), unit: "MWh" };
+    if (unit === "kW" && Math.abs(numeric) >= 1000) return { value: formatNumber(numeric / 1000, 2), unit: "MW" };
+    const decimals = unit === "USD equivalent" || unit === "USD/day" ? 2 : 2;
+    return { value: formatNumber(numeric, decimals), unit };
+  }
+
+  function paletteForTheme(themeName) {
+    const base = { ...themePresets[themeName] };
+    if (initialPreferences.mode === "light") {
+      base.text = "#18313a";
+      base.grid = "rgba(24,49,58,0.12)";
+    }
+    return base;
+  }
+
   function selectedDeviceIds() {
     const value = document.getElementById("deviceSelect").value;
     return value ? [value] : [];
@@ -279,7 +289,7 @@
   }
 
   function chartPayloads(snapshot, themeName) {
-    const theme = themePresets[themeName];
+    const theme = paletteForTheme(themeName);
     const sales = snapshot.sales_trend.map((row) => [row.bucket, row.sales_amount]);
     const costs = snapshot.costs_trend.map((row) => [row.bucket, row.avg_cost]);
     const sectors = snapshot.sector_mix;
@@ -346,10 +356,17 @@
   function applyTheme(themeName) {
     const energyPage = document.querySelector(".energy-page");
     energyPage.dataset.theme = themeName;
-    const lightThemes = new Set(["gray"]);
-    document.body.classList.toggle("logo-mode-light", lightThemes.has(themeName));
-    document.body.classList.toggle("logo-mode-dark", !lightThemes.has(themeName));
-    energyPage.dataset.logoMode = lightThemes.has(themeName) ? "light" : "dark";
+  }
+
+  function applyMode(modeName) {
+    const energyPage = document.querySelector(".energy-page");
+    const isLight = modeName === "light";
+    document.body.classList.toggle("logo-mode-light", isLight);
+    document.body.classList.toggle("logo-mode-dark", !isLight);
+    document.body.classList.toggle("display-mode-light", isLight);
+    document.body.classList.toggle("display-mode-dark", !isLight);
+    energyPage.dataset.mode = modeName;
+    energyPage.dataset.logoMode = modeName;
   }
 
   function syncTabVisibility() {
@@ -386,8 +403,42 @@
   function updateKpis(snapshot) {
     Object.entries(snapshot.kpis).forEach(([key, value]) => {
       const node = document.querySelector(`[data-kpi="${key}"]`);
-      if (node) node.textContent = typeof value === "number" ? value.toFixed(2).replace(/\.00$/, "") : value;
+      const unitNode = document.querySelector(`[data-kpi-unit="${key}"]`);
+      if (!node) return;
+      if (key === "total_consumption_kwh") {
+        const formatted = formatMetric(value, "kWh");
+        node.textContent = formatted.value;
+        if (unitNode) unitNode.textContent = formatted.unit;
+        return;
+      }
+      if (key === "avg_voltage_v") {
+        const formatted = formatMetric(value, "V");
+        node.textContent = formatted.value;
+        if (unitNode) unitNode.textContent = formatted.unit;
+        return;
+      }
+      if (key === "avg_current_a") {
+        const formatted = formatMetric(value, "A");
+        node.textContent = formatted.value;
+        if (unitNode) unitNode.textContent = formatted.unit;
+        return;
+      }
+      if (key === "total_sales_usd") {
+        const formatted = formatMetric(value, "USD equivalent");
+        node.textContent = formatted.value;
+        if (unitNode) unitNode.textContent = formatted.unit;
+        return;
+      }
+      if (key === "avg_production_cost_usd") {
+        const formatted = formatMetric(value, "USD/day");
+        node.textContent = formatted.value;
+        if (unitNode) unitNode.textContent = formatted.unit;
+        return;
+      }
+      if (node) node.textContent = typeof value === "number" ? formatNumber(value, 0) : value;
     });
+    const onlineUnit = document.querySelector('[data-kpi-unit="online_devices"]');
+    if (onlineUnit) onlineUnit.textContent = `of ${snapshot.kpis.device_count}`;
   }
 
   function refreshCharts(snapshot, themeName) {
@@ -405,7 +456,10 @@
   async function persistPreferences() {
     const payload = {
       theme: initialPreferences.theme,
+      mode: initialPreferences.mode,
       refresh_seconds: Number(initialPreferences.refresh_seconds),
+      kiosk_theme: initialPreferences.kiosk_theme,
+      kiosk_mode: initialPreferences.kiosk_mode,
       visible_tabs: syncTabVisibility()
     };
     await fetch("/api/dashboard/preferences", {
@@ -435,8 +489,10 @@
   }
 
   applyTheme(initialPreferences.theme);
+  applyMode(initialPreferences.mode);
   ensureCharts(initialSnapshot, initialPreferences.theme);
   syncTabVisibility();
+  updateKpis(initialSnapshot);
   resetRefreshLoop();
 
   document.getElementById("deviceSelect").addEventListener("change", refreshRealtime);

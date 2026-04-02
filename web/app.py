@@ -43,7 +43,14 @@ def create_app() -> Flask:
 
     @app.context_processor
     def inject_now():
-        return {"now": utcnow()}
+        with session_scope() as session:
+            preferences = load_dashboard_preferences(session)
+        return {
+            "now": utcnow(),
+            "ui_preferences": preferences,
+            "format_compact_value": format_compact_value,
+            "format_compact_metric": format_compact_metric,
+        }
 
     @app.route("/")
     @login_required
@@ -70,7 +77,8 @@ def create_app() -> Flask:
         with session_scope() as session:
             snapshot = build_dashboard_snapshot(session, device_ids=selected_device_ids)
             devices = session.scalars(select(Device).where(Device.enabled.is_(True)).order_by(Device.name)).all()
-        return render_template("local_dashboard.html", snapshot=snapshot, devices=devices, selected_device_ids=selected_device_ids, kiosk_tabs=KIOSK_VARIABLE_TABS)
+            preferences = load_dashboard_preferences(session)
+        return render_template("local_dashboard.html", snapshot=snapshot, devices=devices, selected_device_ids=selected_device_ids, kiosk_tabs=KIOSK_VARIABLE_TABS, preferences=preferences)
 
     @app.route("/api/dashboard/preferences", methods=["GET", "POST"])
     @login_required
@@ -80,7 +88,10 @@ def create_app() -> Flask:
                 payload = request.get_json(silent=True) or {}
                 current = load_dashboard_preferences(session)
                 current["theme"] = payload.get("theme", current["theme"])
+                current["mode"] = payload.get("mode", current["mode"])
                 current["refresh_seconds"] = int(payload.get("refresh_seconds", current["refresh_seconds"]))
+                current["kiosk_theme"] = payload.get("kiosk_theme", current["kiosk_theme"])
+                current["kiosk_mode"] = payload.get("kiosk_mode", current["kiosk_mode"])
                 visible_tabs = payload.get("visible_tabs", current["visible_tabs"])
                 if isinstance(visible_tabs, list) and visible_tabs:
                     current["visible_tabs"] = visible_tabs
@@ -265,7 +276,10 @@ def create_app() -> Flask:
                 upsert_setting(session, "default_poll_interval", request.form["default_poll_interval"])
                 upsert_setting(session, "daemon_reload_interval", request.form["daemon_reload_interval"])
                 dashboard_preferences["theme"] = request.form.get("dashboard_theme", dashboard_preferences["theme"])
+                dashboard_preferences["mode"] = request.form.get("dashboard_mode", dashboard_preferences["mode"])
                 dashboard_preferences["refresh_seconds"] = int(request.form.get("dashboard_refresh_seconds", dashboard_preferences["refresh_seconds"]))
+                dashboard_preferences["kiosk_theme"] = request.form.get("kiosk_theme", dashboard_preferences["kiosk_theme"])
+                dashboard_preferences["kiosk_mode"] = request.form.get("kiosk_mode", dashboard_preferences["kiosk_mode"])
                 upsert_setting(session, "dashboard_preferences", json_dumps(dashboard_preferences))
                 if request.form.get("new_password"):
                     user = session.get(User, current_user.id)
@@ -466,6 +480,23 @@ def json_dumps(payload: dict) -> str:
     import json
 
     return json.dumps(payload)
+
+
+def format_compact_value(value: float | int | None, decimals: int = 1) -> str:
+    if value is None:
+        return "-"
+    return f"{value:,.{decimals}f}"
+
+
+def format_compact_metric(value: float | int | None, unit: str, decimals: int = 1) -> tuple[str, str]:
+    if value is None:
+        return "-", unit
+    numeric = float(value)
+    if unit == "kWh" and abs(numeric) >= 1000:
+        return format_compact_value(numeric / 1000.0, decimals), "MWh"
+    if unit == "kW" and abs(numeric) >= 1000:
+        return format_compact_value(numeric / 1000.0, decimals), "MW"
+    return format_compact_value(numeric, decimals), unit
 
 
 def require_local_request() -> None:

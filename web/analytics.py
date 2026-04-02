@@ -41,8 +41,11 @@ class HistoryFilters:
 
 DEFAULT_DASHBOARD_PREFERENCES = {
     "theme": "green",
+    "mode": "dark",
     "refresh_seconds": 10,
     "visible_tabs": ["consumption", "sales", "sources", "costs"],
+    "kiosk_theme": "green",
+    "kiosk_mode": "dark",
 }
 
 

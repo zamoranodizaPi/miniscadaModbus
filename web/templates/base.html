@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
     {% block head %}{% endblock %}
   </head>
-  <body class="logo-mode-dark">
+  <body class="logo-mode-{{ 'light' if ui_preferences.mode == 'light' else 'dark' }} display-mode-{{ ui_preferences.mode }}">
     <nav class="navbar navbar-expand-lg scada-navbar sticky-top">
       <div class="container-fluid px-4">
         <a class="navbar-brand" href="{{ url_for('index') }}">
@@ -28,7 +28,22 @@
             <a class="nav-link" href="{{ url_for('devices') }}">Dispositivos</a>
             <a class="nav-link" href="{{ url_for('variables') }}">Variables</a>
             <a class="nav-link" href="{{ url_for('readings') }}">Históricos</a>
-            <a class="nav-link" href="{{ url_for('app_settings') }}">Configuración</a>
+            <div class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Exportar</a>
+              <ul class="dropdown-menu dropdown-menu-dark">
+                <li><a class="dropdown-item" href="{{ url_for('energy_report_export', period='daily') }}">Energy Daily CSV</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('readings_export') }}">Readings CSV</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('readings') }}">Open History</a></li>
+              </ul>
+            </div>
+            <div class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Configuración</a>
+              <ul class="dropdown-menu dropdown-menu-dark">
+                <li><a class="dropdown-item" href="{{ url_for('app_settings') }}">Preferencias UI</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('devices') }}">Dispositivos</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('variables') }}">Variables</a></li>
+              </ul>
+            </div>
           </div>
           <div class="navbar-nav align-items-lg-center">
             <span class="nav-meta me-lg-3">{{ current_user.username }}</span>
@@ -36,10 +51,6 @@
           </div>
         </div>
         {% endif %}
-        <div class="app-logo-corner">
-          <img class="app-logo app-logo-light" src="{{ url_for('static', filename='branding/logo_light.png') }}" alt="Logo light" onerror="this.style.display='none'">
-          <img class="app-logo app-logo-dark" src="{{ url_for('static', filename='branding/logo_dark.png') }}" alt="Logo dark" onerror="this.style.display='none'">
-        </div>
       </div>
     </nav>
 

@@ -28,6 +28,14 @@ body {
     linear-gradient(180deg, #071218 0%, #0d1f28 45%, #09161d 100%);
 }
 
+body.display-mode-light {
+  color: #16313b;
+  background:
+    radial-gradient(circle at top left, rgba(95, 208, 141, 0.12), transparent 26%),
+    radial-gradient(circle at top right, rgba(34, 184, 207, 0.12), transparent 30%),
+    linear-gradient(180deg, #eef6f8 0%, #ddebf0 45%, #edf5f7 100%);
+}
+
 a {
   text-decoration: none;
 }
@@ -40,6 +48,11 @@ a {
   background: rgba(7, 18, 24, 0.82);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+body.display-mode-light .scada-navbar {
+  background: rgba(248, 252, 253, 0.9);
+  border-bottom: 1px solid rgba(20, 51, 62, 0.08);
 }
 
 .navbar-brand {
@@ -62,6 +75,12 @@ a {
 .nav-link,
 .nav-meta {
   color: var(--muted);
+}
+
+body.display-mode-light .nav-link,
+body.display-mode-light .nav-meta,
+body.display-mode-light .navbar-brand {
+  color: #36505a;
 }
 
 .nav-link:hover,
@@ -360,6 +379,12 @@ a {
   gap: 1rem;
 }
 
+.energy-page[data-mode="light"] {
+  --dashboard-panel: rgba(247, 251, 252, 0.94);
+  --dashboard-surface: rgba(232, 242, 246, 0.96);
+  --dashboard-text: #18313a;
+}
+
 .energy-page[data-theme="orange"] {
   --dashboard-accent: #ff9f43;
   --dashboard-accent-2: #ffb86c;
@@ -429,8 +454,8 @@ a {
 .energy-header-logo {
   display: none;
   width: 100%;
-  max-width: 240px;
-  max-height: 88px;
+  max-width: 288px;
+  max-height: 106px;
   object-fit: contain;
 }
 
@@ -444,7 +469,7 @@ a {
 
 .energy-toolbar {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 2.2fr;
+  grid-template-columns: 1.4fr 3fr;
   gap: 1rem;
   background: var(--dashboard-panel);
 }
@@ -511,6 +536,46 @@ a {
   background: var(--dashboard-panel);
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
+}
+
+body.display-mode-light .panel-card,
+body.display-mode-light .filter-card,
+body.display-mode-light .metric-card,
+body.display-mode-light .kpi-energy-card,
+body.display-mode-light .chart-block,
+body.display-mode-light .local-focus-control,
+body.display-mode-light .local-focus-chart-area,
+body.display-mode-light .local-energy-kpi,
+body.display-mode-light .local-energy-header {
+  color: #17323b;
+  border-color: rgba(18, 49, 58, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+body.display-mode-light .form-control,
+body.display-mode-light .form-select {
+  color: #18313a;
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(18, 49, 58, 0.12);
+}
+
+body.display-mode-light .form-label,
+body.display-mode-light .kpi-energy-card span,
+body.display-mode-light .panel-kicker,
+body.display-mode-light .panel-badge,
+body.display-mode-light .stack-item.muted,
+body.display-mode-light .local-energy-kpi span {
+  color: #53707a;
+}
+
+body.display-mode-light .btn-outline-light {
+  color: #18313a;
+  border-color: rgba(18, 49, 58, 0.18);
+}
+
+body.display-mode-light .btn-outline-light:hover {
+  background: rgba(18, 49, 58, 0.06);
+  color: #18313a;
 }
 
 .kpi-energy-card.primary {
@@ -629,7 +694,7 @@ a {
 
 @media (max-width: 1100px) {
   .energy-toolbar {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .energy-grid,
@@ -964,6 +1029,13 @@ canvas {
   width: auto;
   height: 74px;
   max-height: 74px;
+}
+
+body.display-mode-light .local-screen {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(95, 208, 141, 0.12), transparent 18%),
+    radial-gradient(circle at 85% 15%, rgba(34, 184, 207, 0.12), transparent 22%),
+    linear-gradient(160deg, #eef6f8 0%, #ddebf0 55%, #edf5f7 100%);
 }
 
 .local-energy-kpis {
