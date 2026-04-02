@@ -33,6 +33,9 @@ sync_project() {
     --exclude "instance/*.db" \
     "${ROOT_DIR}/" "${APP_DIR}/"
   run_as_root chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
+  run_as_root chmod +x "${APP_DIR}/scripts/install.sh"
+  run_as_root chmod +x "${APP_DIR}/scripts/update.sh"
+  run_as_root chmod +x "${APP_DIR}/scripts/start_kiosk.sh"
 }
 
 update_python() {
