@@ -14,12 +14,14 @@ from backend.database import SessionLocal, session_scope
 from backend.security import hash_password, verify_password
 from models.entities import Device, Setting, User, Variable
 from web.analytics import (
+    DEFAULT_KIOSK_VARIABLES,
     HistoryFilters,
-    KIOSK_VARIABLE_TABS,
     build_dashboard_snapshot,
     energy_aggregate,
     export_history_csv,
     humanize_variable_name,
+    infer_unit_for_variable,
+    kiosk_variable_names,
     history_rows,
     load_dashboard_preferences,
     parse_date_range,
@@ -154,7 +156,17 @@ def create_app() -> Flask:
             snapshot = build_dashboard_snapshot(session, device_ids=selected_device_ids)
             devices = session.scalars(select(Device).where(*is_device_online_expr()).order_by(Device.name)).all()
             preferences = load_dashboard_preferences(session)
-        return render_template("local_dashboard.html", snapshot=snapshot, devices=devices, selected_device_ids=selected_device_ids, kiosk_tabs=KIOSK_VARIABLE_TABS, preferences=preferences)
+        enabled_names = kiosk_variable_names(preferences)
+        fallback_map = dict(DEFAULT_KIOSK_VARIABLES)
+        kiosk_tabs = [
+            {
+                "name": variable_name,
+                "label": fallback_map.get(variable_name, humanize_variable_name(variable_name)),
+                "unit": infer_unit_for_variable(variable_name),
+            }
+            for variable_name in enabled_names
+        ]
+        return render_template("local_dashboard.html", snapshot=snapshot, devices=devices, selected_device_ids=selected_device_ids, kiosk_tabs=kiosk_tabs, preferences=preferences)
 
     @app.route("/api/dashboard/preferences", methods=["GET", "POST"])
     @login_required

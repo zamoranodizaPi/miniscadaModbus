@@ -23,7 +23,7 @@ PRIMARY_VARIABLES = {
     "frecuencia_hz",
     "factor_potencia",
 }
-KIOSK_VARIABLE_TABS = [
+DEFAULT_KIOSK_VARIABLES = [
     ("potencia_activa_kw", "Power"),
     ("energia_acumulada_kwh", "Energy"),
     ("voltaje_ll_v", "Voltage"),
@@ -243,7 +243,7 @@ def build_dashboard_snapshot(session, device_ids: list[int] | None = None) -> di
         "devices": sorted(device_cards, key=lambda item: item["power_kw"], reverse=True),
         "energy_breakdown": sorted(energy_breakdown, key=lambda item: item["energy_kwh"], reverse=True),
         "trend": trend_series,
-        "variable_series": build_variable_timeseries_bundle(session, device_ids=device_ids, hours=3),
+        "variable_series": build_variable_timeseries_bundle(session, kiosk_variable_names(preferences), device_ids=device_ids, hours=3),
         "sales_trend": sales_series,
         "costs_trend": costs_series,
         "source_mix": source_mix,
@@ -278,9 +278,9 @@ def build_power_timeseries(session, device_ids: list[int] | None = None, hours: 
     return [{"timestamp": bucket_value, "power_kw": round(float(power_kw or 0.0), 2)} for bucket_value, power_kw in rows]
 
 
-def build_variable_timeseries_bundle(session, device_ids: list[int] | None = None, hours: int = 3) -> dict[str, list[dict]]:
+def build_variable_timeseries_bundle(session, variable_names: list[str], device_ids: list[int] | None = None, hours: int = 3) -> dict[str, list[dict]]:
     bundle: dict[str, list[dict]] = {}
-    for variable_name, _label in KIOSK_VARIABLE_TABS:
+    for variable_name in variable_names:
         bundle[variable_name] = build_variable_timeseries(session, variable_name=variable_name, device_ids=device_ids, hours=hours)
     return bundle
 
@@ -589,3 +589,10 @@ def infer_unit_for_variable(variable_name: str) -> str:
 def humanize_variable_name(variable_name: str) -> str:
     label = variable_name.replace("_", " ").title()
     return label.replace("Kwh", "kWh").replace("Kw", "kW").replace("Hz", "Hz").replace("Pf", "PF")
+
+
+def kiosk_variable_names(preferences: dict) -> list[str]:
+    names = [chart["name"] for chart in preferences.get("chart_variables", []) if chart.get("enabled")]
+    if names:
+        return names
+    return [name for name, _label in DEFAULT_KIOSK_VARIABLES]

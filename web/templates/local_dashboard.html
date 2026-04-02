@@ -83,14 +83,14 @@
             <div class="local-energy-panel-head mb-2">
               <div>
                 <span id="localSelectedDeviceTitle">{{ t.all_devices }}</span>
-                <strong id="localActiveVariableTitle">Power</strong>
+                <strong id="localActiveVariableTitle">{{ kiosk_tabs[0].label if kiosk_tabs else 'Signals' }}</strong>
               </div>
               <small>3 {{ t.hour_window }}</small>
             </div>
             <ul class="nav nav-pills energy-tab-nav local-kiosk-tabs mb-2" id="localVariableTabs" role="tablist">
-              {% for variable_name, label in kiosk_tabs %}
+              {% for tab in kiosk_tabs %}
               <li class="nav-item" role="presentation">
-                <button class="nav-link {% if loop.first %}active{% endif %} local-variable-tab" type="button" data-variable="{{ variable_name }}">{{ label }}</button>
+                <button class="nav-link active local-variable-tab" type="button" data-variable="{{ tab.name }}">{{ tab.label }}</button>
               </li>
               {% endfor %}
             </ul>
@@ -106,12 +106,18 @@
     <script>
       let localSnapshot = {{ snapshot|tojson }};
       const localeTexts = {{ t|tojson }};
-      let activeVariable = "{{ kiosk_tabs[0][0] if kiosk_tabs else 'potencia_activa_kw' }}";
+      let activeVariables = {{ kiosk_tabs|map(attribute='name')|list|tojson }};
       const variableLabels = {
-        {% for variable_name, label in kiosk_tabs %}
-        "{{ variable_name }}": "{{ label }}",
+        {% for tab in kiosk_tabs %}
+        "{{ tab.name }}": "{{ tab.label }}",
         {% endfor %}
       };
+      const variableUnits = {
+        {% for tab in kiosk_tabs %}
+        "{{ tab.name }}": "{{ tab.unit }}",
+        {% endfor %}
+      };
+      const chartPalette = ["#5fd08d", "#4dabf7", "#ff9f43", "#f72585", "#8ce99a", "#ced4da", "#22b8cf", "#ffd166"];
 
       const chartTheme = {
         orange: { accent: "#ff9f43", text: "#fff2e2", grid: "rgba(255,255,255,0.08)" },
@@ -129,20 +135,21 @@
       const localFocusChart = new Chart(document.getElementById("localFocusChart"), {
         type: "line",
         data: {
-          labels: (localSnapshot.variable_series[activeVariable] || []).map((row) => row.timestamp.slice(11, 16)),
-          datasets: [{
-            label: variableLabels[activeVariable],
-            data: (localSnapshot.variable_series[activeVariable] || []).map((row) => row.value),
-            borderColor: kioskTheme.accent,
-            backgroundColor: `${kioskTheme.accent}33`,
-            fill: true,
-            tension: 0.28,
-            pointRadius: 0
-          }]
+          labels: [],
+          datasets: []
         },
         options: {
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          interaction: { mode: "nearest", intersect: false },
+          plugins: {
+            legend: { display: true, labels: { color: kioskTheme.text, boxWidth: 10, usePointStyle: true } },
+            tooltip: {
+              callbacks: {
+                title: (items) => items[0]?.label || "",
+                label: (context) => `${context.dataset.label}: ${formatAxisValue(context.parsed.y, variableUnits[context.dataset.variableName] || "")}`
+              }
+            }
+          },
           scales: {
             x: { ticks: { color: kioskTheme.text, maxRotation: 0 }, grid: { color: kioskTheme.grid } },
             y: { ticks: { color: kioskTheme.text }, grid: { color: kioskTheme.grid } }
@@ -173,6 +180,64 @@
         if (unit === "kWh" && Math.abs(numeric) >= 1000) return { value: formatNumber(numeric / 1000, 1), unit: "MWh" };
         if (unit === "kW" && Math.abs(numeric) >= 1000) return { value: formatNumber(numeric / 1000, 1), unit: "MW" };
         return { value: formatNumber(numeric, 1), unit };
+      }
+
+      function formatAxisValue(value, unit) {
+        const numeric = Number(value || 0);
+        if (unit === "kWh" && Math.abs(numeric) >= 1000) return `${formatNumber(numeric / 1000, 1)} MWh`;
+        if (unit === "kW" && Math.abs(numeric) >= 1000) return `${formatNumber(numeric / 1000, 1)} MW`;
+        if (!unit) return formatNumber(numeric, 1);
+        return `${formatNumber(numeric, 1)} ${unit}`;
+      }
+
+      function buildFocusDatasets(snapshot) {
+        const labels = Array.from(new Set(activeVariables.flatMap((name) => (snapshot.variable_series[name] || []).map((row) => row.timestamp)))).sort();
+        const unitAxes = new Map();
+        const datasets = activeVariables.map((name, index) => {
+          const unit = variableUnits[name] || "";
+          if (!unitAxes.has(unit)) unitAxes.set(unit, `y${unitAxes.size}`);
+          const valueMap = new Map((snapshot.variable_series[name] || []).map((row) => [row.timestamp, row.value]));
+          const color = chartPalette[index % chartPalette.length];
+          return {
+            label: variableLabels[name] || name,
+            variableName: name,
+            data: labels.map((timestamp) => valueMap.has(timestamp) ? valueMap.get(timestamp) : null),
+            borderColor: color,
+            backgroundColor: `${color}33`,
+            fill: false,
+            tension: 0.28,
+            pointRadius: 0,
+            pointHitRadius: 18,
+            pointHoverRadius: 4,
+            spanGaps: true,
+            yAxisID: unitAxes.get(unit),
+          };
+        });
+        const scales = {
+          x: {
+            ticks: {
+              color: kioskTheme.text,
+              maxRotation: 0,
+              callback: function(_value, index) {
+                const label = this.getLabelForValue(index);
+                return label ? label.slice(11, 16) : "";
+              }
+            },
+            grid: { color: kioskTheme.grid }
+          }
+        };
+        Array.from(unitAxes.entries()).forEach(([unit, axisId], index) => {
+          scales[axisId] = {
+            type: "linear",
+            position: index % 2 === 0 ? "left" : "right",
+            ticks: {
+              color: kioskTheme.text,
+              callback: (value) => formatAxisValue(value, unit)
+            },
+            grid: { color: index === 0 ? kioskTheme.grid : "rgba(0,0,0,0)" }
+          };
+        });
+        return { labels, datasets, scales };
       }
 
       function updateKpis(snapshot) {
@@ -215,14 +280,14 @@
       }
 
       function updateFocusChart(snapshot) {
-        const rows = snapshot.variable_series[activeVariable] || [];
+        const payload = buildFocusDatasets(snapshot);
         const title = document.getElementById("localSelectedDeviceTitle");
         title.textContent = snapshot.selection?.label || selectedDeviceLabel();
         title.classList.toggle("selection-aggregate-label", (snapshot.selection?.device_count || 0) !== 1);
-        document.getElementById("localActiveVariableTitle").textContent = variableLabels[activeVariable] || activeVariable;
-        localFocusChart.data.labels = rows.map((row) => row.timestamp.slice(11, 16));
-        localFocusChart.data.datasets[0].label = variableLabels[activeVariable] || activeVariable;
-        localFocusChart.data.datasets[0].data = rows.map((row) => row.value);
+        document.getElementById("localActiveVariableTitle").textContent = activeVariables.map((name) => variableLabels[name] || name).join(" / ");
+        localFocusChart.data.labels = payload.labels;
+        localFocusChart.data.datasets = payload.datasets;
+        localFocusChart.options.scales = payload.scales;
         localFocusChart.update("none");
       }
 
@@ -238,9 +303,15 @@
 
       document.querySelectorAll(".local-variable-tab").forEach((button) => {
         button.addEventListener("click", () => {
-          document.querySelectorAll(".local-variable-tab").forEach((item) => item.classList.remove("active"));
-          button.classList.add("active");
-          activeVariable = button.dataset.variable;
+          const variableName = button.dataset.variable;
+          const activeIndex = activeVariables.indexOf(variableName);
+          if (activeIndex >= 0 && activeVariables.length > 1) {
+            activeVariables = activeVariables.filter((name) => name !== variableName);
+            button.classList.remove("active");
+          } else if (activeIndex === -1) {
+            activeVariables = [...activeVariables, variableName];
+            button.classList.add("active");
+          }
           updateFocusChart(localSnapshot);
         });
       });
