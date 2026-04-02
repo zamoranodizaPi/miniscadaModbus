@@ -17,15 +17,17 @@
   <body class="local-screen energy-page logo-mode-{{ preferences.kiosk_mode }} display-mode-{{ preferences.kiosk_mode }}" data-theme="{{ preferences.kiosk_theme }}" data-mode="{{ preferences.kiosk_mode }}">
     <main class="local-energy-shell local-energy-shell--focused">
       <section class="local-energy-header">
-        <div>
+        <div class="local-energy-title-block">
           <h1 class="local-energy-title">
             <span class="energy-title-main">Energy Management</span>
-            {% if preferences.title_suffix %}
-            <span class="energy-title-suffix">{{ preferences.title_suffix }}</span>
-            {% endif %}
             <span class="energy-title-by">by Sieza</span>
           </h1>
         </div>
+        {% if preferences.title_suffix %}
+        <div class="local-energy-suffix-wrap">
+          <span class="local-energy-suffix">{{ preferences.title_suffix }}</span>
+        </div>
+        {% endif %}
         <div class="local-energy-header-right">
           <div class="app-logo-corner kiosk-logo">
             <img class="app-logo app-logo-light" src="{{ url_for('static', filename='branding/logo_light.png') }}" alt="Logo light" onerror="this.style.display='none'">
