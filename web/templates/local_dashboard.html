@@ -117,7 +117,20 @@
         "{{ tab.name }}": "{{ tab.unit }}",
         {% endfor %}
       };
-      const chartPalette = ["#5fd08d", "#4dabf7", "#ff9f43", "#f72585", "#8ce99a", "#ced4da", "#22b8cf", "#ffd166"];
+      const variableColorMap = {
+        potencia_activa_kw: "#5fd08d",
+        energia_acumulada_kwh: "#ff9f43",
+        voltaje_ll_v: "#4dabf7",
+        corriente_total_a: "#f72585",
+        frecuencia_hz: "#22b8cf",
+        factor_potencia: "#ffd166",
+        demanda_kw: "#8ce99a",
+        estado_interruptor: "#ced4da",
+        alarma_general: "#ff6b6b",
+        tablero_energizado: "#74c0fc",
+        mantenimiento_activo: "#b197fc",
+      };
+      const fallbackPalette = ["#5fd08d", "#4dabf7", "#ff9f43", "#f72585", "#8ce99a", "#ced4da", "#22b8cf", "#ffd166"];
 
       const chartTheme = {
         orange: { accent: "#ff9f43", text: "#fff2e2", grid: "rgba(255,255,255,0.08)" },
@@ -197,7 +210,7 @@
           const unit = variableUnits[name] || "";
           if (!unitAxes.has(unit)) unitAxes.set(unit, `y${unitAxes.size}`);
           const valueMap = new Map((snapshot.variable_series[name] || []).map((row) => [row.timestamp, row.value]));
-          const color = chartPalette[index % chartPalette.length];
+          const color = variableColorMap[name] || fallbackPalette[index % fallbackPalette.length];
           return {
             label: variableLabels[name] || name,
             variableName: name,
