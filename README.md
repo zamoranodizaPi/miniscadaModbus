@@ -22,10 +22,25 @@ Proyecto base para Raspberry Pi que actúa como datalogger Modbus TCP con almace
 
 ```bash
 ./scripts/install.sh
-source .venv/bin/activate
 ```
 
-## Ejecución
+El instalador despliega el sistema en `/opt/miniscadaModbus`, crea el entorno virtual, instala dependencias, genera `/etc/default/miniscada`, siembra los simuladores PM8000 y deja habilitados estos servicios:
+
+- `miniscada-web.service`
+- `miniscada-daemon.service`
+- `miniscada-simulator.service`
+
+Variables opcionales antes de instalar:
+
+```bash
+export MINISCADA_APP_DIR=/opt/miniscadaModbus
+export MINISCADA_APP_USER=pi
+export MINISCADA_WEB_PORT=8000
+export MINISCADA_SECRET_KEY='cambia-esto'
+./scripts/install.sh
+```
+
+## Ejecución manual
 
 Web:
 
@@ -44,6 +59,32 @@ Simulador PM8000:
 ```bash
 python -m backend.simulator_seed
 python -m simulator.pm8000_fleet
+```
+
+## Operación como sistema embebido
+
+Estado de servicios:
+
+```bash
+sudo systemctl status miniscada-web.service
+sudo systemctl status miniscada-daemon.service
+sudo systemctl status miniscada-simulator.service
+```
+
+Reinicio:
+
+```bash
+sudo systemctl restart miniscada-simulator.service
+sudo systemctl restart miniscada-daemon.service
+sudo systemctl restart miniscada-web.service
+```
+
+Logs:
+
+```bash
+journalctl -u miniscada-web.service -f
+journalctl -u miniscada-daemon.service -f
+journalctl -u miniscada-simulator.service -f
 ```
 
 ## Dashboard Empresarial

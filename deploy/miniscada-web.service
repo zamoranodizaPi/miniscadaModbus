@@ -1,14 +1,16 @@
 [Unit]
 Description=Mini SCADA Web
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/opt/miniscadaModbus
-Environment="MINISCADA_SECRET_KEY=change-me"
-ExecStart=/opt/miniscadaModbus/.venv/bin/gunicorn -w 2 -b 0.0.0.0:8000 web.app:app
+User=__APP_USER__
+WorkingDirectory=__APP_DIR__
+EnvironmentFile=/etc/default/miniscada
+ExecStart=__APP_DIR__/.venv/bin/gunicorn -w 2 -b 0.0.0.0:__WEB_PORT__ web.app:app
 Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
