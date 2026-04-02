@@ -23,7 +23,7 @@ const fadeUp = {
 const content = {
   en: {
     brandTag: "Electrical Engineering",
-    nav: ["Capabilities", "Sectors", "Strength", "Projects", "Contact"],
+    nav: ["Capabilities", "Sectors", "Strength", "Projects", "Gallery", "Contact"],
     quote: "Request a Quote",
     badge: "Heavy Industry & Power Systems",
     heroTitle: "Engineering Power Infrastructure with Precision and Reliability",
@@ -101,6 +101,14 @@ const content = {
         text: "Industrial installation, startup, and power system execution for production growth and operational resilience.",
       },
     ],
+    galleryLabel: "Service Gallery",
+    galleryTitle: "Upload project evidence, field work, and service execution imagery.",
+    galleryText:
+      "Drag and drop photos from substations, panels, field services, testing, or automation work to build a visual portfolio directly inside the site.",
+    galleryDrop: "Drop images here",
+    galleryBrowse: "or select files",
+    galleryHint: "PNG, JPG, WEBP. Local preview only in this browser session.",
+    galleryEmpty: "No images uploaded yet.",
     ctaLabel: "Start the Conversation",
     ctaTitle:
       "Talk to an engineering team prepared for industrial power, field execution, and critical infrastructure.",
@@ -117,7 +125,7 @@ const content = {
   },
   es: {
     brandTag: "Ingeniería Eléctrica",
-    nav: ["Capacidades", "Sectores", "Fortaleza", "Proyectos", "Contacto"],
+    nav: ["Capacidades", "Sectores", "Fortaleza", "Proyectos", "Galería", "Contacto"],
     quote: "Solicitar cotización",
     badge: "Industria pesada y sistemas de potencia",
     heroTitle: "Ingeniería de infraestructura eléctrica con precisión y confiabilidad",
@@ -195,6 +203,14 @@ const content = {
         text: "Instalación industrial, arranque y ejecución del sistema eléctrico para crecimiento productivo y resiliencia operativa.",
       },
     ],
+    galleryLabel: "Galería de servicios",
+    galleryTitle: "Sube evidencias de proyectos, trabajos en campo y servicios ejecutados.",
+    galleryText:
+      "Arrastra y suelta fotos de subestaciones, tableros, servicios de campo, pruebas o automatización para construir un portafolio visual directamente dentro del sitio.",
+    galleryDrop: "Suelta las imágenes aquí",
+    galleryBrowse: "o selecciona archivos",
+    galleryHint: "PNG, JPG, WEBP. Vista previa local solo en esta sesión del navegador.",
+    galleryEmpty: "Aún no hay imágenes cargadas.",
     ctaLabel: "Inicia la conversación",
     ctaTitle:
       "Habla con un equipo de ingeniería preparado para potencia industrial, ejecución en campo e infraestructura crítica.",
@@ -221,7 +237,21 @@ const footerIcons = [TowerControl, Factory, Sparkles];
 
 export default function App() {
   const [language, setLanguage] = useState("en");
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [dragActive, setDragActive] = useState(false);
   const t = content[language];
+
+  const addFiles = (files) => {
+    const next = Array.from(files || [])
+      .filter((file) => file.type.startsWith("image/"))
+      .map((file) => ({
+        id: `${file.name}-${file.size}-${file.lastModified}`,
+        name: file.name,
+        url: URL.createObjectURL(file),
+      }));
+    if (!next.length) return;
+    setGalleryImages((current) => [...next, ...current.filter((item) => !next.some((n) => n.id === item.id))]);
+  };
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#04070b] text-white">
@@ -248,7 +278,7 @@ export default function App() {
             {t.nav.map((label, index) => (
               <a
                 key={label}
-                href={["#capabilities", "#sectors", "#strength", "#projects", "#contact"][index]}
+                href={["#capabilities", "#sectors", "#strength", "#projects", "#gallery", "#contact"][index]}
                 className="text-sm text-slate-300 transition hover:text-white"
               >
                 {label}
@@ -453,6 +483,76 @@ export default function App() {
               </motion.article>
             ))}
           </div>
+        </section>
+
+        <section id="gallery" className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-120px" }} variants={fadeUp} transition={{ duration: 0.6 }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-300">{t.galleryLabel}</p>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white md:text-5xl">{t.galleryTitle}</h2>
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">{t.galleryText}</p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-120px" }}
+            variants={fadeUp}
+            transition={{ duration: 0.6, delay: 0.08 }}
+            className="mt-12"
+          >
+            <label
+              className={`block cursor-pointer rounded-[2rem] border border-dashed p-10 text-center transition ${
+                dragActive
+                  ? "border-sky-300 bg-sky-400/10 shadow-[0_0_40px_rgba(56,189,248,0.15)]"
+                  : "border-white/15 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.05]"
+              }`}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                setDragActive(true);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragActive(true);
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                setDragActive(false);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                setDragActive(false);
+                addFiles(event.dataTransfer.files);
+              }}
+            >
+              <div className="mx-auto max-w-xl">
+                <div className="text-xl font-semibold text-white">{t.galleryDrop}</div>
+                <div className="mt-3 text-sm uppercase tracking-[0.28em] text-sky-300">{t.galleryBrowse}</div>
+                <p className="mt-4 text-sm leading-7 text-slate-400">{t.galleryHint}</p>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(event) => addFiles(event.target.files)}
+              />
+            </label>
+
+            {galleryImages.length ? (
+              <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {galleryImages.map((image) => (
+                  <div key={image.id} className="overflow-hidden rounded-[1.8rem] border border-white/10 bg-white/[0.03]">
+                    <img src={image.url} alt={image.name} className="h-72 w-full object-cover" />
+                    <div className="border-t border-white/10 px-5 py-4 text-sm text-slate-300">{image.name}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-8 rounded-[1.6rem] border border-white/10 bg-white/[0.03] px-6 py-5 text-sm text-slate-400">
+                {t.galleryEmpty}
+              </div>
+            )}
+          </motion.div>
         </section>
 
         <section id="contact" className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
