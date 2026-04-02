@@ -11,6 +11,7 @@ Proyecto base para Raspberry Pi que actúa como datalogger Modbus TCP con almace
 - `config/`: configuración inicial YAML.
 - `deploy/`: servicios `systemd`.
 - `scripts/`: instalación inicial.
+- `simulator/`: flota local de medidores PM8000 simulados.
 
 ## Requisitos
 
@@ -36,6 +37,13 @@ Daemon:
 
 ```bash
 python -m daemon.service
+```
+
+Simulador PM8000:
+
+```bash
+python -m backend.simulator_seed
+python -m simulator.pm8000_fleet
 ```
 
 La primera ejecución crea `instance/miniscada.db` y carga `config/initial_config.yaml`.
@@ -65,6 +73,7 @@ Variables relevantes por entorno:
 - Registro de lecturas históricas.
 - Exportación CSV desde `/readings/export.csv`.
 - API JSON autenticada en `/api/readings/latest`.
+- Simulador local de 8 medidores PowerLogic PM8000 en `127.0.0.1:15020-15027`.
 - Logs JSON para integración con `journald` o colectores externos.
 - Dockerfile, `docker-compose.yml` y servicios `systemd`.
 

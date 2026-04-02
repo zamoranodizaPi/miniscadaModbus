@@ -14,4 +14,6 @@ Instalación completada.
 1. Activar entorno: source $ROOT_DIR/.venv/bin/activate
 2. Iniciar web: python -m web.app
 3. Iniciar daemon: python -m daemon.service
+4. Cargar simuladores: python -m backend.simulator_seed
+5. Iniciar simuladores: python -m simulator.pm8000_fleet
 EOF

@@ -1,0 +1,13 @@
+[Unit]
+Description=Mini SCADA PM8000 Simulator Fleet
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/miniscadaModbus
+ExecStart=/opt/miniscadaModbus/.venv/bin/python -m simulator.pm8000_fleet
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
