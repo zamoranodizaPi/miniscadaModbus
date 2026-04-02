@@ -2,10 +2,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
+  BadgeCheck,
   Bolt,
   Cable,
   Factory,
   Gauge,
+  HardHat,
   Mail,
   MapPin,
   Phone,
@@ -23,82 +25,105 @@ const fadeUp = {
 const content = {
   en: {
     brandTag: "Electrical Engineering",
-    nav: ["Capabilities", "Sectors", "Strength", "Projects", "Gallery", "Contact"],
+    nav: ["About", "Capabilities", "Sectors", "Why SIEZA", "Projects", "Gallery", "Contact"],
     quote: "Request a Quote",
     badge: "Heavy Industry & Power Systems",
-    heroTitle: "Engineering Power Infrastructure with Precision and Reliability",
+    heroTitle: "Industrial Electrical Infrastructure Built for Reliability",
     heroText:
-      "SIEZA delivers electrical engineering, testing, automation, and industrial execution for high-demand environments where uptime, safety, and technical confidence are non-negotiable.",
+      "High-quality electrical solutions for industrial infrastructure, built around precision engineering, uptime, and dependable field execution.",
     contactUs: "Contact Us",
     viewExperience: "View Experience",
     highlights: [
-      ["High Voltage Environments", "Substations, transmission, and power distribution execution."],
-      ["Industrial Control", "Panels, PLC systems, and real-time plant visibility."],
-      ["Field-Driven Engineering", "Solutions shaped by industrial reality, not generic assumptions."],
+      ["Electrical Panels", "Manufacturing and integration for industrial distribution, control, and protection."],
+      ["Field Services", "Maintenance, diagnostics, and electrical support in real operating environments."],
+      ["Industrial Reliability", "Solutions designed to protect uptime, safety, and production continuity."],
+    ],
+    aboutLabel: "About SIEZA",
+    aboutTitle: "A Mexican electrical engineering company focused on critical industrial infrastructure.",
+    aboutText:
+      "Sistemas Eléctricos Zaragoza S.A. de C.V. delivers industrial electrical solutions with a field-first mindset. From electrical panels and installations to maintenance, diagnostics, spare parts, and engineering support, SIEZA is built to serve operations where reliability matters.",
+    aboutPoints: [
+      "100% Mexican company serving industrial clients",
+      "Technical expertise in panels, power systems, and field execution",
+      "Reliable support for critical electrical infrastructure",
     ],
     capabilitiesLabel: "Capabilities",
-    capabilitiesTitle: "Technical capability built for serious industrial and energy-sector execution.",
+    capabilitiesTitle: "Core capabilities built for uptime, safety, and industrial performance.",
     capabilities: [
       {
-        title: "Power Infrastructure Engineering",
-        text: "Detailed engineering for substations, distribution systems, and critical industrial power networks.",
+        title: "Electrical Panel Manufacturing",
+        text: "Design and fabrication of industrial panels that centralize control, distribution, and protection while improving operational reliability.",
       },
       {
-        title: "Electrical Testing & Commissioning",
-        text: "Field validation, energized startup, protection checks, and technical assurance before operation.",
+        title: "Industrial Electrical Installations",
+        text: "Execution of electrical installations that solve integration challenges and enable safe, efficient plant expansion and operation.",
       },
       {
-        title: "Industrial Automation & Control",
-        text: "PLC, SCADA, monitoring, and electrical integration for high-availability industrial environments.",
+        title: "Field Maintenance & Support",
+        text: "On-site maintenance and technical response that reduce downtime, restore critical systems, and protect production continuity.",
       },
       {
-        title: "Field Execution & Service",
-        text: "On-site support, diagnostics, troubleshooting, and operational continuity under real plant conditions.",
+        title: "Electrical Testing & Diagnostics",
+        text: "Testing and fault analysis that identify risk early, validate system condition, and improve electrical safety and performance.",
+      },
+      {
+        title: "Engineering & Studies",
+        text: "Technical studies and engineering definition that improve decision-making, electrical integrity, and execution quality.",
+      },
+      {
+        title: "Spare Parts & Industrial Supply",
+        text: "Critical components and industrial support that shorten response time and keep essential electrical assets available.",
       },
     ],
     sectorsLabel: "Industrial Sectors",
-    sectorsTitle: "Sectors where power reliability and technical execution directly impact operations.",
+    sectorsTitle: "Industrial sectors where electrical performance directly affects continuity and safety.",
     sectors: [
       {
-        title: "Energy & Utilities",
-        text: "Grid-connected infrastructure, substations, and medium-voltage execution.",
+        title: "Manufacturing Plants",
+        text: "Electrical systems, panels, and field support for continuous industrial production.",
       },
       {
-        title: "Industrial Plants",
-        text: "Electrical systems for process continuity, safety, and heavy-duty operations.",
+        title: "Energy Sector",
+        text: "Substations, power infrastructure, and electrical execution for demanding energy environments.",
       },
       {
-        title: "Control & Monitoring",
-        text: "Panels, PLC architecture, supervision, and plant-level visibility.",
+        title: "Infrastructure & Facilities",
+        text: "Reliable electrical solutions for industrial facilities, services, and operational assets.",
       },
     ],
-    strengthLabel: "Engineering Strength",
-    strengthTitle: "Built for trust in high-stakes electrical and industrial environments.",
+    strengthLabel: "Why SIEZA",
+    strengthTitle: "Serious execution for industrial clients that cannot afford electrical uncertainty.",
     strengthText:
-      "Our value is defined by technical depth, field experience, and disciplined execution in environments where failure is not an option.",
+      "SIEZA combines engineering discipline, field expertise, and practical industrial support to solve electrical problems with business impact.",
     metrics: [
-      ["24/7", "Industrial readiness and technical response"],
-      ["HV/MV", "Power infrastructure and substation focus"],
-      ["End-to-end", "Engineering, execution, testing, and support"],
-      ["Safety-first", "Compliance-driven delivery culture"],
+      ["Reliable", "Execution focused on continuity and dependable delivery"],
+      ["Industrial-grade", "Solutions built for real plant conditions"],
+      ["Field expertise", "Hands-on response where the work actually happens"],
+      ["End-to-end", "Panels, installation, maintenance, and support"],
+    ],
+    whyPoints: [
+      "Reliable execution in critical industrial systems",
+      "Industrial-grade solutions with practical field value",
+      "Technical expertise across engineering, maintenance, and supply",
+      "End-to-end service from panel manufacturing to on-site support",
     ],
     projectsLabel: "Projects",
-    projectsTitle: "Project profiles designed for industrial confidence and power-system resilience.",
+    projectsTitle: "Project experience aligned to real industrial electrical demands.",
     projects: [
       {
-        type: "High Voltage Engineering",
-        title: "Substation Modernization Package",
-        text: "Engineering, testing, and energized commissioning for mission-critical incoming power infrastructure.",
+        type: "Electrical Panels",
+        title: "Industrial Control and Distribution Panels",
+        text: "Manufacturing and delivery of electrical panels built for safer operation, cleaner integration, and reliable industrial control.",
       },
       {
-        type: "Industrial Automation",
-        title: "Motor Control & Monitoring Retrofit",
-        text: "Panel integration, control redesign, and plant-level visibility for reliability-driven operations.",
+        type: "Industrial Installations",
+        title: "Plant Electrical Installation Packages",
+        text: "Field execution of electrical installations that support plant upgrades, expansions, and operational continuity.",
       },
       {
-        type: "Field Execution",
-        title: "Electrical Distribution Expansion",
-        text: "Industrial installation, startup, and power system execution for production growth and operational resilience.",
+        type: "Maintenance Work",
+        title: "Maintenance, Diagnostics, and Recovery Support",
+        text: "On-site work focused on restoring performance, reducing fault exposure, and sustaining uptime in critical systems.",
       },
     ],
     galleryLabel: "Service Gallery",
@@ -110,97 +135,119 @@ const content = {
     galleryHint: "PNG, JPG, WEBP. Local preview only in this browser session.",
     galleryEmpty: "No images uploaded yet.",
     ctaLabel: "Start the Conversation",
-    ctaTitle:
-      "Talk to an engineering team prepared for industrial power, field execution, and critical infrastructure.",
+    ctaTitle: "Power your operations with reliable electrical engineering",
     ctaText:
-      "Contact SIEZA to discuss electrical engineering, testing, automation, field services, and project support for heavy industry and energy systems.",
-    footerTitle: "Serious electrical engineering for heavy industry, energy, and automation environments.",
+      "Contact SIEZA for electrical panels, industrial installations, maintenance, engineering support, and industrial electrical solutions built for continuity.",
+    footerTitle: "High-quality electrical solutions for industrial infrastructure.",
     footerContact: "Contact",
     footerFocus: "Core Focus",
     footerFocusItems: [
-      "Substations and power infrastructure",
-      "Industrial plants and heavy operations",
-      "Automation, monitoring, and execution",
+      "Electrical panels and industrial power systems",
+      "Field maintenance, installations, and engineering support",
+      "Spare parts and industrial electrical continuity",
     ],
   },
   es: {
     brandTag: "Ingeniería Eléctrica",
-    nav: ["Capacidades", "Sectores", "Fortaleza", "Proyectos", "Galería", "Contacto"],
+    nav: ["Nosotros", "Capacidades", "Sectores", "Por qué SIEZA", "Proyectos", "Galería", "Contacto"],
     quote: "Solicitar cotización",
     badge: "Industria pesada y sistemas de potencia",
-    heroTitle: "Ingeniería de infraestructura eléctrica con precisión y confiabilidad",
+    heroTitle: "Infraestructura eléctrica industrial construida para la confiabilidad",
     heroText:
-      "SIEZA desarrolla ingeniería eléctrica, pruebas, automatización y ejecución industrial para entornos de alta exigencia donde la continuidad, la seguridad y la confianza técnica no son negociables.",
+      "Soluciones eléctricas de alta calidad para infraestructura industrial, desarrolladas con precisión, continuidad operativa y experiencia técnica en campo.",
     contactUs: "Contáctanos",
     viewExperience: "Ver experiencia",
     highlights: [
-      ["Entornos de alto voltaje", "Subestaciones, transmisión y ejecución en distribución eléctrica."],
-      ["Control industrial", "Tableros, PLC y visibilidad de planta en tiempo real."],
-      ["Ingeniería orientada a campo", "Soluciones definidas por la realidad industrial, no por supuestos genéricos."],
+      ["Tableros eléctricos", "Fabricación e integración para distribución, control y protección industrial."],
+      ["Servicios en campo", "Mantenimiento, diagnóstico y soporte eléctrico en entornos operativos reales."],
+      ["Confiabilidad industrial", "Soluciones pensadas para proteger continuidad, seguridad y producción."],
+    ],
+    aboutLabel: "Sobre SIEZA",
+    aboutTitle: "Empresa mexicana de ingeniería eléctrica enfocada en infraestructura industrial crítica.",
+    aboutText:
+      "Sistemas Eléctricos Zaragoza S.A. de C.V. entrega soluciones eléctricas industriales con una visión orientada al campo. Desde tableros eléctricos e instalaciones hasta mantenimiento, diagnóstico, refacciones y soporte técnico, SIEZA está hecha para atender operaciones donde la confiabilidad sí importa.",
+    aboutPoints: [
+      "Empresa 100% mexicana orientada al sector industrial",
+      "Experiencia técnica en tableros, sistemas eléctricos y ejecución en campo",
+      "Soporte confiable para infraestructura eléctrica crítica",
     ],
     capabilitiesLabel: "Capacidades",
-    capabilitiesTitle: "Capacidad técnica diseñada para proyectos industriales y del sector energético.",
+    capabilitiesTitle: "Capacidades clave construidas para continuidad, seguridad y desempeño industrial.",
     capabilities: [
       {
-        title: "Ingeniería de infraestructura eléctrica",
-        text: "Ingeniería detallada para subestaciones, sistemas de distribución y redes eléctricas industriales críticas.",
+        title: "Fabricación de tableros eléctricos",
+        text: "Diseño y fabricación de tableros industriales que concentran control, distribución y protección para mejorar confiabilidad operativa.",
       },
       {
-        title: "Pruebas y comisionamiento",
-        text: "Validación en campo, arranque energizado, verificación de protecciones y aseguramiento técnico antes de operar.",
+        title: "Instalaciones eléctricas industriales",
+        text: "Ejecución de instalaciones eléctricas que resuelven integración, permiten expansión segura y soportan la operación eficiente.",
       },
       {
-        title: "Automatización y control industrial",
-        text: "PLC, SCADA, monitoreo e integración eléctrica para entornos industriales de alta disponibilidad.",
+        title: "Mantenimiento y soporte en campo",
+        text: "Mantenimiento en sitio y respuesta técnica que reducen paro, recuperan sistemas críticos y protegen continuidad productiva.",
       },
       {
-        title: "Ejecución y servicio en campo",
-        text: "Soporte en sitio, diagnóstico, solución de fallas y continuidad operativa en condiciones reales de planta.",
+        title: "Pruebas y diagnóstico eléctrico",
+        text: "Pruebas y análisis de fallas que detectan riesgo temprano, validan condición del sistema y mejoran seguridad y desempeño.",
+      },
+      {
+        title: "Ingeniería y estudios",
+        text: "Estudios técnicos e ingeniería de definición que mejoran decisiones, integridad eléctrica y calidad de ejecución.",
+      },
+      {
+        title: "Refacciones y suministro industrial",
+        text: "Componentes críticos y soporte industrial que acortan tiempos de respuesta y mantienen disponibles los activos esenciales.",
       },
     ],
     sectorsLabel: "Sectores industriales",
-    sectorsTitle: "Sectores donde la confiabilidad eléctrica y la ejecución técnica impactan directamente la operación.",
+    sectorsTitle: "Sectores donde el desempeño eléctrico impacta directamente la continuidad y la seguridad.",
     sectors: [
       {
-        title: "Energía y utilities",
-        text: "Infraestructura conectada a red, subestaciones y ejecución en media tensión.",
+        title: "Plantas manufactureras",
+        text: "Sistemas eléctricos, tableros y soporte de campo para producción industrial continua.",
       },
       {
-        title: "Plantas industriales",
-        text: "Sistemas eléctricos para continuidad de proceso, seguridad y operación de alta exigencia.",
+        title: "Sector energía",
+        text: "Subestaciones, infraestructura de potencia y ejecución eléctrica para entornos energéticos exigentes.",
       },
       {
-        title: "Control y monitoreo",
-        text: "Tableros, arquitectura PLC, supervisión y visibilidad a nivel planta.",
+        title: "Infraestructura e instalaciones",
+        text: "Soluciones eléctricas confiables para instalaciones industriales, servicios y activos operativos.",
       },
     ],
-    strengthLabel: "Fortaleza de ingeniería",
-    strengthTitle: "Construido para generar confianza en entornos eléctricos e industriales de alta exigencia.",
+    strengthLabel: "Por qué SIEZA",
+    strengthTitle: "Ejecución seria para clientes industriales que no pueden permitirse incertidumbre eléctrica.",
     strengthText:
-      "Nuestro valor se define por profundidad técnica, experiencia de campo y ejecución disciplinada en ambientes donde fallar no es opción.",
+      "SIEZA combina disciplina de ingeniería, experiencia de campo y soporte industrial práctico para resolver problemas eléctricos con impacto real al negocio.",
     metrics: [
-      ["24/7", "Disponibilidad industrial y respuesta técnica"],
-      ["AT/MT", "Enfoque en infraestructura eléctrica y subestaciones"],
-      ["Integral", "Ingeniería, ejecución, pruebas y soporte"],
-      ["Seguridad", "Cultura de entrega basada en cumplimiento"],
+      ["Confiable", "Ejecución enfocada en continuidad y entrega segura"],
+      ["Industrial", "Soluciones pensadas para condiciones reales de planta"],
+      ["Experiencia", "Respuesta técnica donde realmente ocurre el trabajo"],
+      ["Integral", "Tableros, instalación, mantenimiento y soporte"],
+    ],
+    whyPoints: [
+      "Ejecución confiable en sistemas industriales críticos",
+      "Soluciones de nivel industrial con valor práctico en campo",
+      "Experiencia técnica en ingeniería, mantenimiento y suministro",
+      "Servicio integral desde tableros hasta soporte en sitio",
     ],
     projectsLabel: "Proyectos",
-    projectsTitle: "Perfiles de proyecto diseñados para confianza industrial y resiliencia del sistema eléctrico.",
+    projectsTitle: "Experiencia de proyecto alineada a demandas eléctricas industriales reales.",
     projects: [
       {
-        type: "Ingeniería de alto voltaje",
-        title: "Modernización de subestación",
-        text: "Ingeniería, pruebas y comisionamiento energizado para infraestructura crítica de alimentación.",
+        type: "Tableros eléctricos",
+        title: "Tableros de control y distribución industrial",
+        text: "Fabricación y entrega de tableros eléctricos construidos para una operación más segura, limpia y confiable.",
       },
       {
-        type: "Automatización industrial",
-        title: "Retrofit de control y monitoreo",
-        text: "Integración de tableros, rediseño de control y visibilidad de planta para mejorar confiabilidad.",
+        type: "Instalaciones industriales",
+        title: "Paquetes de instalación eléctrica en planta",
+        text: "Ejecución de instalaciones eléctricas que soportan ampliaciones, mejoras y continuidad operativa.",
       },
       {
-        type: "Ejecución en campo",
-        title: "Ampliación de distribución eléctrica",
-        text: "Instalación industrial, arranque y ejecución del sistema eléctrico para crecimiento productivo y resiliencia operativa.",
+        type: "Mantenimiento",
+        title: "Mantenimiento, diagnóstico y soporte de recuperación",
+        text: "Trabajo en sitio orientado a recuperar desempeño, reducir exposición a fallas y sostener continuidad en sistemas críticos.",
       },
     ],
     galleryLabel: "Galería de servicios",
@@ -212,34 +259,35 @@ const content = {
     galleryHint: "PNG, JPG, WEBP. Vista previa local solo en esta sesión del navegador.",
     galleryEmpty: "Aún no hay imágenes cargadas.",
     ctaLabel: "Inicia la conversación",
-    ctaTitle:
-      "Habla con un equipo de ingeniería preparado para potencia industrial, ejecución en campo e infraestructura crítica.",
+    ctaTitle: "Impulsa tu operación con ingeniería eléctrica confiable",
     ctaText:
-      "Contacta a SIEZA para proyectos de ingeniería eléctrica, pruebas, automatización, servicios de campo y soporte para industria pesada y sistemas de energía.",
-    footerTitle: "Ingeniería eléctrica seria para industria pesada, energía y automatización.",
+      "Contacta a SIEZA para tableros eléctricos, instalaciones industriales, mantenimiento, soporte de ingeniería y soluciones eléctricas construidas para la continuidad.",
+    footerTitle: "Soluciones eléctricas de alta calidad para infraestructura industrial.",
     footerContact: "Contacto",
     footerFocus: "Enfoque principal",
     footerFocusItems: [
-      "Subestaciones e infraestructura eléctrica",
-      "Plantas industriales y operación pesada",
-      "Automatización, monitoreo y ejecución",
+      "Tableros eléctricos y sistemas de potencia industrial",
+      "Mantenimiento de campo, instalaciones y soporte de ingeniería",
+      "Refacciones y continuidad eléctrica industrial",
     ],
   },
 };
 
-const capabilityIcons = [Bolt, Gauge, Cable, Wrench];
+const capabilityIcons = [Bolt, Cable, Wrench, Gauge, TowerControl, Factory];
 const sectorImages = [
   "https://images.unsplash.com/photo-1513828583688-c52646db42da?auto=format&fit=crop&w=1600&q=80",
   "https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=1600&q=80",
   "https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=1600&q=80",
 ];
 const footerIcons = [TowerControl, Factory, Sparkles];
+const aboutIcons = [BadgeCheck, HardHat, ShieldCheck];
 
 export default function App() {
   const [language, setLanguage] = useState("en");
   const [galleryImages, setGalleryImages] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const t = content[language];
+  const galleryOnly = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "gallery";
 
   const addFiles = (files) => {
     const next = Array.from(files || [])
@@ -261,60 +309,135 @@ export default function App() {
       </div>
 
       <header className="fixed top-0 z-50 w-full border-b border-white/10 bg-[#04070b]/72 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4 lg:px-8">
-          <div className="flex items-center gap-4">
-            <img
-              src="/branding/logo_dark.png"
-              alt="SIEZA"
-              className="h-12 w-auto object-contain"
-            />
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.32em] text-slate-400">{t.brandTag}</p>
-              <div className="mt-1 text-lg font-semibold tracking-[0.24em] text-white">SIEZA</div>
+        <div className="mx-auto max-w-7xl px-6 py-4 lg:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <img
+                src="/branding/logo_dark.png"
+                alt="SIEZA"
+                className="h-12 w-auto object-contain"
+              />
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.32em] text-slate-400">{t.brandTag}</p>
+                <div className="mt-1 text-lg font-semibold tracking-[0.24em] text-white">SIEZA</div>
+              </div>
             </div>
+
+            {!galleryOnly && (
+              <nav className="hidden items-center gap-8 md:flex">
+              {t.nav.map((label, index) => (
+                  <a
+                    key={label}
+                    href={index === 5 ? "?view=gallery" : ["#about", "#capabilities", "#sectors", "#strength", "#projects", "#gallery", "#contact"][index]}
+                    target={index === 5 ? "_blank" : undefined}
+                    rel={index === 5 ? "noreferrer" : undefined}
+                    className="text-sm text-slate-300 transition hover:text-white"
+                  >
+                    {label}
+                  </a>
+              ))}
+              </nav>
+            )}
           </div>
 
-          <nav className="hidden items-center gap-8 md:flex">
-            {t.nav.map((label, index) => (
-              <a
-                key={label}
-                href={["#capabilities", "#sectors", "#strength", "#projects", "#gallery", "#contact"][index]}
-                className="text-sm text-slate-300 transition hover:text-white"
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-1 text-xs">
+          <div className="mt-3 flex items-center justify-end gap-2 border-t border-white/8 pt-3">
+            <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-0.5 text-[10px]">
               <button
                 type="button"
                 onClick={() => setLanguage("en")}
-                className={`rounded-full px-3 py-1.5 transition ${language === "en" ? "bg-white text-slate-950" : "text-slate-300"}`}
+                className={`rounded-full px-2.5 py-1 transition ${language === "en" ? "bg-white text-slate-950" : "text-slate-300"}`}
               >
                 EN
               </button>
               <button
                 type="button"
                 onClick={() => setLanguage("es")}
-                className={`rounded-full px-3 py-1.5 transition ${language === "es" ? "bg-white text-slate-950" : "text-slate-300"}`}
+                className={`rounded-full px-2.5 py-1 transition ${language === "es" ? "bg-white text-slate-950" : "text-slate-300"}`}
               >
                 ES
               </button>
             </div>
             <a
-              href="#contact"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-400 to-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:translate-y-[-1px]"
+              href={galleryOnly ? "/" : "#contact"}
+              className="inline-flex items-center gap-1.5 rounded-full border border-sky-300/30 bg-sky-400/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-200 transition hover:bg-sky-400/16"
             >
-              {t.quote}
-              <ArrowRight className="h-4 w-4" />
+              {galleryOnly ? "Home" : t.quote}
+              <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </div>
         </div>
       </header>
 
       <main>
+        {galleryOnly ? (
+          <section id="gallery" className="mx-auto max-w-7xl px-6 pb-24 pt-44 lg:px-8">
+            <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.6 }}>
+              <h1 className="text-4xl font-semibold tracking-tight text-white md:text-6xl">{t.galleryLabel}</h1>
+            </motion.div>
+
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              transition={{ duration: 0.6, delay: 0.08 }}
+              className="mt-12"
+            >
+              <label
+                className={`block cursor-pointer rounded-[2rem] border border-dashed p-10 text-center transition ${
+                  dragActive
+                    ? "border-sky-300 bg-sky-400/10 shadow-[0_0_40px_rgba(56,189,248,0.15)]"
+                    : "border-white/15 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.05]"
+                }`}
+                onDragEnter={(event) => {
+                  event.preventDefault();
+                  setDragActive(true);
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setDragActive(true);
+                }}
+                onDragLeave={(event) => {
+                  event.preventDefault();
+                  setDragActive(false);
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setDragActive(false);
+                  addFiles(event.dataTransfer.files);
+                }}
+              >
+                <div className="mx-auto max-w-xl">
+                  <div className="text-xl font-semibold text-white">{t.galleryDrop}</div>
+                  <div className="mt-3 text-sm uppercase tracking-[0.28em] text-sky-300">{t.galleryBrowse}</div>
+                  <p className="mt-4 text-sm leading-7 text-slate-400">{t.galleryHint}</p>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(event) => addFiles(event.target.files)}
+                />
+              </label>
+
+              {galleryImages.length ? (
+                <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                  {galleryImages.map((image) => (
+                    <div key={image.id} className="overflow-hidden rounded-[1.8rem] border border-white/10 bg-white/[0.03]">
+                      <img src={image.url} alt={image.name} className="h-72 w-full object-cover" />
+                      <div className="border-t border-white/10 px-5 py-4 text-sm text-slate-300">{image.name}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-8 rounded-[1.6rem] border border-white/10 bg-white/[0.03] px-6 py-5 text-sm text-slate-400">
+                  {t.galleryEmpty}
+                </div>
+              )}
+            </motion.div>
+          </section>
+        ) : (
+          <>
         <section
           className="relative flex min-h-screen items-end overflow-hidden"
           style={{
@@ -368,6 +491,39 @@ export default function App() {
                   <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
                 </div>
               ))}
+            </motion.div>
+          </div>
+        </section>
+
+        <section id="about" className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-120px" }} variants={fadeUp} transition={{ duration: 0.6 }}>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-300">{t.aboutLabel}</p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white md:text-5xl">{t.aboutTitle}</h2>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">{t.aboutText}</p>
+            </motion.div>
+
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-120px" }}
+              variants={fadeUp}
+              transition={{ duration: 0.65, delay: 0.1 }}
+              className="grid gap-4"
+            >
+              {t.aboutPoints.map((point, index) => {
+                const Icon = aboutIcons[index];
+                return (
+                  <div key={point} className="rounded-[1.8rem] border border-white/10 bg-white/5 p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                        <Icon className="h-5 w-5 text-orange-300" />
+                      </div>
+                      <p className="text-base leading-7 text-slate-300">{point}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </motion.div>
           </div>
         </section>
@@ -440,6 +596,14 @@ export default function App() {
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-300">{t.strengthLabel}</p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white md:text-5xl">{t.strengthTitle}</h2>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">{t.strengthText}</p>
+              <div className="mt-8 space-y-4">
+                {t.whyPoints.map((point) => (
+                  <div key={point} className="flex items-start gap-3 text-sm leading-7 text-slate-300">
+                    <BadgeCheck className="mt-1 h-4 w-4 shrink-0 text-sky-300" />
+                    <span>{point}</span>
+                  </div>
+                ))}
+              </div>
             </motion.div>
 
             <motion.div
@@ -485,76 +649,6 @@ export default function App() {
           </div>
         </section>
 
-        <section id="gallery" className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-120px" }} variants={fadeUp} transition={{ duration: 0.6 }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-300">{t.galleryLabel}</p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white md:text-5xl">{t.galleryTitle}</h2>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">{t.galleryText}</p>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-120px" }}
-            variants={fadeUp}
-            transition={{ duration: 0.6, delay: 0.08 }}
-            className="mt-12"
-          >
-            <label
-              className={`block cursor-pointer rounded-[2rem] border border-dashed p-10 text-center transition ${
-                dragActive
-                  ? "border-sky-300 bg-sky-400/10 shadow-[0_0_40px_rgba(56,189,248,0.15)]"
-                  : "border-white/15 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.05]"
-              }`}
-              onDragEnter={(event) => {
-                event.preventDefault();
-                setDragActive(true);
-              }}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setDragActive(true);
-              }}
-              onDragLeave={(event) => {
-                event.preventDefault();
-                setDragActive(false);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                setDragActive(false);
-                addFiles(event.dataTransfer.files);
-              }}
-            >
-              <div className="mx-auto max-w-xl">
-                <div className="text-xl font-semibold text-white">{t.galleryDrop}</div>
-                <div className="mt-3 text-sm uppercase tracking-[0.28em] text-sky-300">{t.galleryBrowse}</div>
-                <p className="mt-4 text-sm leading-7 text-slate-400">{t.galleryHint}</p>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(event) => addFiles(event.target.files)}
-              />
-            </label>
-
-            {galleryImages.length ? (
-              <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {galleryImages.map((image) => (
-                  <div key={image.id} className="overflow-hidden rounded-[1.8rem] border border-white/10 bg-white/[0.03]">
-                    <img src={image.url} alt={image.name} className="h-72 w-full object-cover" />
-                    <div className="border-t border-white/10 px-5 py-4 text-sm text-slate-300">{image.name}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-8 rounded-[1.6rem] border border-white/10 bg-white/[0.03] px-6 py-5 text-sm text-slate-400">
-                {t.galleryEmpty}
-              </div>
-            )}
-          </motion.div>
-        </section>
-
         <section id="contact" className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
           <motion.div
             initial="hidden"
@@ -584,6 +678,8 @@ export default function App() {
             </div>
           </motion.div>
         </section>
+          </>
+        )}
       </main>
 
       <footer className="border-t border-white/10 bg-black/30">
