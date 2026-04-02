@@ -861,11 +861,12 @@ canvas {
 
 .local-energy-shell {
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 0.92fr);
   gap: 10px;
   width: 100vw;
   height: 100vh;
-  padding: 12px;
+  padding: 10px;
+  overflow: hidden;
 }
 
 .local-energy-header,
@@ -882,15 +883,16 @@ canvas {
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border-radius: 18px;
   background: rgba(12, 31, 39, 0.88);
 }
 
 .local-energy-title {
   margin: 4px 0 0;
-  font-size: 2.25rem;
+  font-size: 2.35rem;
   font-weight: 800;
+  line-height: 1;
 }
 
 .local-energy-copy {
@@ -911,17 +913,20 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  min-height: 76px;
 }
 
 .kiosk-logo .app-logo {
-  max-width: 220px;
-  max-height: 82px;
+  max-width: 260px;
+  width: auto;
+  height: 74px;
+  max-height: 74px;
 }
 
 .local-energy-kpis {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .local-energy-kpi {
@@ -929,8 +934,8 @@ canvas {
   flex-direction: column;
   justify-content: center;
   gap: 0.2rem;
-  min-height: 86px;
-  padding: 10px 12px;
+  min-height: 78px;
+  padding: 8px 10px;
   border-radius: 16px;
   background: rgba(12, 31, 39, 0.92);
 }
@@ -945,7 +950,7 @@ canvas {
 }
 
 .local-energy-kpi strong {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   line-height: 1;
   font-weight: 800;
 }
@@ -958,24 +963,27 @@ canvas {
 .local-energy-main {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr 0.9fr;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
+  align-items: stretch;
 }
 
 .local-energy-bottom {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
+  align-items: stretch;
 }
 
 .local-energy-panel {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 18px;
   background: rgba(10, 27, 34, 0.9);
+  overflow: hidden;
 }
 
 .local-energy-panel.wide {
@@ -983,7 +991,7 @@ canvas {
 }
 
 .local-energy-panel.compact {
-  min-height: 0;
+  min-height: 170px;
 }
 
 .local-energy-panel.narrow,
@@ -996,7 +1004,7 @@ canvas {
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.75rem;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .local-energy-panel-head span {
@@ -1008,7 +1016,7 @@ canvas {
 }
 
 .local-energy-panel-head strong {
-  font-size: 1rem;
+  font-size: 0.92rem;
 }
 
 .local-energy-panel-head small {
@@ -1018,22 +1026,39 @@ canvas {
 .local-donut-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 6px;
   min-height: 0;
   flex: 1;
+}
+
+.local-energy-panel canvas {
+  display: block;
+  width: 100% !important;
+}
+
+.local-energy-panel.wide canvas {
+  height: 185px !important;
+  max-height: 185px;
+}
+
+.local-energy-panel.narrow canvas,
+.local-energy-panel.compact canvas {
+  height: 150px !important;
+  max-height: 150px;
 }
 
 .local-status-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
+  overflow: hidden;
 }
 
 .local-status-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px;
+  gap: 4px;
+  padding: 8px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
 }
@@ -1052,18 +1077,18 @@ canvas {
 
 .local-status-card header,
 .local-status-card footer {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
 }
 
 .local-status-card strong {
-  font-size: 1.15rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
 .local-reading-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow: auto;
 }
 
@@ -1071,16 +1096,16 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.04);
 }
 
 .local-reading-item strong {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
 }
 
 .local-reading-item span {
   color: #bfd5db;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
 }
