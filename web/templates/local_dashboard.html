@@ -15,11 +15,9 @@
       <section class="local-energy-header">
         <div>
           <div class="local-tag">Embedded Enterprise Energy</div>
-          <h1 class="local-energy-title">Energy Management Dashboard</h1>
-          <p class="local-energy-copy">Vista local de operación para Raspberry Pi con KPIs, consumo, ventas equivalentes y estado de tableros.</p>
+          <h1 class="local-energy-title">Energy Management</h1>
         </div>
         <div class="local-energy-header-right">
-          <div class="local-energy-clock" id="localClock">{{ now.strftime("%Y-%m-%d %H:%M:%S UTC") }}</div>
           <div class="app-logo-corner kiosk-logo">
             <img class="app-logo app-logo-light" src="{{ url_for('static', filename='branding/logo_light.png') }}" alt="Logo light" onerror="this.style.display='none'">
             <img class="app-logo app-logo-dark" src="{{ url_for('static', filename='branding/logo_dark.png') }}" alt="Logo dark" onerror="this.style.display='none'">
@@ -85,9 +83,7 @@
             <canvas id="localRenewableChart"></canvas>
           </div>
         </div>
-      </section>
 
-      <section class="local-energy-bottom">
         <div class="local-energy-panel compact">
           <div class="local-energy-panel-head">
             <div>
@@ -97,7 +93,9 @@
           </div>
           <canvas id="localSectorChart"></canvas>
         </div>
+      </section>
 
+      <section class="local-energy-bottom">
         <div class="local-energy-panel compact">
           <div class="local-energy-panel-head">
             <div>
@@ -230,7 +228,7 @@
       }
 
       function syncClock() {
-        document.getElementById("localClock").textContent = new Date().toLocaleString("sv-SE").replace("T", " ");
+        return;
       }
 
       function updateKpis(snapshot) {
@@ -287,15 +285,12 @@
         const response = await fetch("/api/local/realtime", { headers: { "X-Requested-With": "fetch" } });
         if (!response.ok) return;
         localSnapshot = await response.json();
-        syncClock();
         updateKpis(localSnapshot);
         updateReadings(localSnapshot);
         updateDevices(localSnapshot);
         updateCharts(localSnapshot);
       }
 
-      syncClock();
-      setInterval(syncClock, 1000);
       setInterval(refreshLocal, 8000);
     </script>
   </body>
