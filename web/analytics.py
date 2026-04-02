@@ -43,6 +43,7 @@ DEFAULT_DASHBOARD_PREFERENCES = {
     "theme": "green",
     "mode": "dark",
     "language": "en",
+    "title_suffix": "",
     "refresh_seconds": 10,
     "visible_tabs": ["consumption", "sales", "sources", "costs"],
     "kiosk_theme": "green",

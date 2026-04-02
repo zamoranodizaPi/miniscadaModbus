@@ -19,6 +19,7 @@ from web.analytics import (
     build_dashboard_snapshot,
     energy_aggregate,
     export_history_csv,
+    humanize_variable_name,
     history_rows,
     load_dashboard_preferences,
     parse_date_range,
@@ -42,11 +43,11 @@ LOCALE_TEXTS = {
         "plant_overview": "Plant overview",
         "devices": "Devices",
         "configured_signals": "Configured Signals",
+        "signal_selection": "Signal Selection",
         "selection_context": "Selection Context",
         "graphs_active": "graphs active",
         "signals": "Signals",
         "configured_measurements": "Configured Measurements",
-        "three_per_row": "3 per row",
         "latest_readings": "Latest Readings",
         "live": "Live",
         "total_consumption": "Total Consumption",
@@ -67,6 +68,7 @@ LOCALE_TEXTS = {
         "export_csv": "Export CSV",
         "terminal_log": "Terminal Log",
         "all": "All",
+        "header_suffix": "Panel Title",
     },
     "es": {
         "all_devices": "Todos los equipos",
@@ -76,11 +78,11 @@ LOCALE_TEXTS = {
         "plant_overview": "Vista de planta",
         "devices": "Equipos",
         "configured_signals": "Senales configuradas",
+        "signal_selection": "Seleccion de senales",
         "selection_context": "Contexto de seleccion",
         "graphs_active": "graficas activas",
         "signals": "Senales",
         "configured_measurements": "Mediciones configuradas",
-        "three_per_row": "3 por fila",
         "latest_readings": "Ultimas lecturas",
         "live": "En vivo",
         "total_consumption": "Consumo total",
@@ -101,6 +103,7 @@ LOCALE_TEXTS = {
         "export_csv": "Exportar CSV",
         "terminal_log": "Log terminal",
         "all": "Todos",
+        "header_suffix": "Titulo del panel",
     },
 }
 
@@ -122,6 +125,7 @@ def create_app() -> Flask:
             "format_compact_value": format_compact_value,
             "format_compact_metric": format_compact_metric,
             "get_locale_texts": get_locale_texts,
+            "humanize_variable_name": humanize_variable_name,
         }
 
     @app.route("/")
@@ -162,6 +166,7 @@ def create_app() -> Flask:
                 current["theme"] = payload.get("theme", current["theme"])
                 current["mode"] = payload.get("mode", current["mode"])
                 current["language"] = payload.get("language", current["language"])
+                current["title_suffix"] = (payload.get("title_suffix", current.get("title_suffix", "")) or "").strip()
                 current["refresh_seconds"] = int(payload.get("refresh_seconds", current["refresh_seconds"]))
                 current["kiosk_theme"] = payload.get("kiosk_theme", current["kiosk_theme"])
                 current["kiosk_mode"] = payload.get("kiosk_mode", current["kiosk_mode"])
@@ -169,6 +174,9 @@ def create_app() -> Flask:
                 visible_tabs = payload.get("visible_tabs", current["visible_tabs"])
                 if isinstance(visible_tabs, list) and visible_tabs:
                     current["visible_tabs"] = visible_tabs
+                chart_variables = payload.get("chart_variables")
+                if isinstance(chart_variables, list):
+                    current["chart_variables"] = chart_variables
                 upsert_setting(session, "dashboard_preferences", json_dumps(current))
                 return jsonify(current)
             return jsonify(load_dashboard_preferences(session))
@@ -352,6 +360,7 @@ def create_app() -> Flask:
                 dashboard_preferences["theme"] = request.form.get("dashboard_theme", dashboard_preferences["theme"])
                 dashboard_preferences["mode"] = request.form.get("dashboard_mode", dashboard_preferences["mode"])
                 dashboard_preferences["language"] = request.form.get("dashboard_language", dashboard_preferences["language"])
+                dashboard_preferences["title_suffix"] = request.form.get("title_suffix", dashboard_preferences.get("title_suffix", "")).strip()
                 dashboard_preferences["refresh_seconds"] = int(request.form.get("dashboard_refresh_seconds", dashboard_preferences["refresh_seconds"]))
                 dashboard_preferences["kiosk_theme"] = request.form.get("kiosk_theme", dashboard_preferences["kiosk_theme"])
                 dashboard_preferences["kiosk_mode"] = request.form.get("kiosk_mode", dashboard_preferences["kiosk_mode"])

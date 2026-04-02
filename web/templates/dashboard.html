@@ -12,7 +12,13 @@
 <section class="energy-page" data-theme="{{ preferences.theme }}" data-mode="{{ preferences.mode }}" data-logo-mode="{{ preferences.mode }}">
   <header class="energy-header">
     <div class="energy-header-copy">
-      <h1 class="energy-title"><span class="energy-title-main">Energy Management</span><span class="energy-title-by">by Sieza</span></h1>
+      <h1 class="energy-title">
+        <span class="energy-title-main">Energy Management</span>
+        <span class="energy-title-by">by Sieza</span>
+        {% if preferences.title_suffix %}
+        <span class="energy-title-suffix">{{ preferences.title_suffix }}</span>
+        {% endif %}
+      </h1>
     </div>
     <div class="energy-header-brand">
       <img class="energy-header-logo energy-header-logo-light" src="{{ url_for('static', filename='branding/logo_light.png') }}" alt="Logo light" onerror="this.style.display='none'">
@@ -99,11 +105,21 @@
       </div>
       <div class="toolbar-group">
         <label class="form-label">{{ t.configured_signals }}</label>
-        <div class="toolbar-summary" id="configuredSignalsSummary">{{ snapshot.chart_panels|length }} {{ t.graphs_active }}</div>
+        <div class="signal-toggle-grid" id="signalSelectionGrid">
+          {% for chart in preferences.chart_variables %}
+          <label class="signal-toggle-chip">
+            <input class="signal-visibility-toggle" type="checkbox" value="{{ chart.name }}" {% if chart.enabled %}checked{% endif %}>
+            <span>{{ humanize_variable_name(chart.name) }}</span>
+          </label>
+          {% endfor %}
+        </div>
       </div>
       <div class="toolbar-group wide">
         <label class="form-label">{{ t.selection_context }}</label>
-        <div class="toolbar-summary" id="webChartSelectionMeta">{{ snapshot.selection.label }}</div>
+        <div class="toolbar-summary toolbar-summary-stack">
+          <div id="webChartSelectionMeta">{{ snapshot.selection.label }}</div>
+          <small id="configuredSignalsSummary">{{ snapshot.chart_panels|length }} {{ t.graphs_active }}</small>
+        </div>
       </div>
     </section>
 
@@ -113,7 +129,6 @@
           <p class="panel-kicker">Signals</p>
           <h2 class="panel-title">{{ t.configured_measurements }}</h2>
         </div>
-        <span class="panel-badge">{{ t.three_per_row }}</span>
       </div>
       <div class="signal-chart-grid" id="signalChartGrid">
         {% for panel in snapshot.chart_panels %}
@@ -167,6 +182,10 @@
   let currentSnapshot = initialSnapshot;
   let refreshHandle = null;
   let realtimeController = null;
+
+  function currentChartPreferences() {
+    return initialPreferences.chart_variables || [];
+  }
 
   function formatNumber(value, decimals = 2) {
     return new Intl.NumberFormat("en-US", {
@@ -256,6 +275,42 @@
     return payloads;
   }
 
+  function signalChartMarkup(panel, index) {
+    const exportButton = panel.chart_type === "line"
+      ? `<button class="btn btn-sm btn-outline-light signal-export-btn" type="button" data-export-chart="${panel.name}">${localeTexts.export_csv}</button>`
+      : "";
+    return `<article class="chart-block signal-chart-card" data-chart-name="${panel.name}" data-chart-type="${panel.chart_type}" data-chart-unit="${panel.unit}">
+      <div class="signal-chart-head">
+        <h3>${panel.label}</h3>
+        ${exportButton}
+      </div>
+      <canvas id="signal-chart-${index}"></canvas>
+    </article>`;
+  }
+
+  function bindExportButtons() {
+    document.querySelectorAll(".signal-export-btn").forEach((button) => {
+      button.addEventListener("click", () => exportChartCsv(button.dataset.exportChart));
+    });
+  }
+
+  function destroyCharts() {
+    Object.values(charts).forEach((chart) => chart.destroy());
+    Object.keys(charts).forEach((key) => delete charts[key]);
+  }
+
+  function syncChartGrid(snapshot) {
+    const grid = document.getElementById("signalChartGrid");
+    const currentNames = Array.from(grid.querySelectorAll(".signal-chart-card")).map((card) => card.dataset.chartName);
+    const nextNames = (snapshot.chart_panels || []).map((panel) => panel.name);
+    const sameRoster = currentNames.length === nextNames.length && currentNames.every((name, index) => name === nextNames[index]);
+    if (sameRoster) return;
+    destroyCharts();
+    grid.innerHTML = (snapshot.chart_panels || []).map((panel, index) => signalChartMarkup(panel, index)).join("");
+    ensureCharts(snapshot, initialPreferences.theme);
+    bindExportButtons();
+  }
+
   function ensureCharts(snapshot, themeName) {
     const payloads = buildSignalPayloads(snapshot, themeName);
     document.querySelectorAll(".signal-chart-card").forEach((card, index) => {
@@ -290,6 +345,12 @@
   function updateLatest(rows) {
     const container = document.getElementById("latestReadingsList");
     container.innerHTML = rows.map((row) => `<div class="terminal-line"><span class="terminal-ts">${row.timestamp}</span><span class="terminal-msg">${row.device} / ${row.variable} = ${row.value}</span></div>`).join("");
+  }
+
+  function updateSignalSummary() {
+    const count = document.querySelectorAll(".signal-visibility-toggle:checked").length;
+    const summary = document.getElementById("configuredSignalsSummary");
+    if (summary) summary.textContent = `${count} ${localeTexts.graphs_active}`;
   }
 
   function updateKpis(snapshot) {
@@ -364,6 +425,7 @@
   }
 
   function refreshCharts(snapshot, themeName) {
+    syncChartGrid(snapshot);
     const payloads = buildSignalPayloads(snapshot, themeName);
     Object.entries(payloads).forEach(([name, payload]) => {
       const chart = charts[name];
@@ -379,6 +441,21 @@
       chart.options = payload.options;
       chart.update("none");
     });
+  }
+
+  async function saveSignalVisibility() {
+    const enabledNames = new Set(Array.from(document.querySelectorAll(".signal-visibility-toggle:checked")).map((input) => input.value));
+    initialPreferences.chart_variables = currentChartPreferences().map((chart) => ({
+      ...chart,
+      enabled: enabledNames.has(chart.name)
+    }));
+    updateSignalSummary();
+    await fetch("/api/dashboard/preferences", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chart_variables: initialPreferences.chart_variables })
+    });
+    await refreshRealtime();
   }
 
   async function refreshRealtime() {
@@ -433,12 +510,16 @@
   updateKpis(initialSnapshot);
   updateSelectionKpis(initialSnapshot);
   updateLatest(initialSnapshot.latest_rows);
+  updateSignalSummary();
   resetRefreshLoop();
 
   document.getElementById("deviceSelect").addEventListener("input", handleDeviceChange);
   document.getElementById("deviceSelect").addEventListener("change", handleDeviceChange);
-  document.querySelectorAll(".signal-export-btn").forEach((button) => {
-    button.addEventListener("click", () => exportChartCsv(button.dataset.exportChart));
+  document.querySelectorAll(".signal-visibility-toggle").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      saveSignalVisibility().catch((error) => console.error(error));
+    });
   });
+  bindExportButtons();
 </script>
 {% endblock %}

@@ -35,6 +35,10 @@
     </select>
   </div>
   <div class="col-md-4">
+    <label class="form-label">Panel title suffix</label>
+    <input class="form-control" name="title_suffix" type="text" value="{{ dashboard_preferences.get('title_suffix', '') }}" placeholder="Tablero de bombas">
+  </div>
+  <div class="col-md-4">
     <label class="form-label">Refresh dashboard</label>
     <select class="form-select" name="dashboard_refresh_seconds">
       {% for seconds in [5, 10, 15] %}

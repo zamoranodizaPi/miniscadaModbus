@@ -18,8 +18,13 @@
     <main class="local-energy-shell local-energy-shell--focused">
       <section class="local-energy-header">
         <div>
-          <div class="local-tag">Embedded Enterprise Energy</div>
-          <h1 class="local-energy-title"><span class="energy-title-main">Energy Management</span><span class="energy-title-by">by Sieza</span></h1>
+          <h1 class="local-energy-title">
+            <span class="energy-title-main">Energy Management</span>
+            <span class="energy-title-by">by Sieza</span>
+            {% if preferences.title_suffix %}
+            <span class="energy-title-suffix">{{ preferences.title_suffix }}</span>
+            {% endif %}
+          </h1>
         </div>
         <div class="local-energy-header-right">
           <div class="app-logo-corner kiosk-logo">
@@ -212,8 +217,8 @@
       function updateFocusChart(snapshot) {
         const rows = snapshot.variable_series[activeVariable] || [];
         const title = document.getElementById("localSelectedDeviceTitle");
-        title.textContent = selectedDeviceLabel();
-        title.classList.toggle("selection-aggregate-label", !selectedDeviceIds().length);
+        title.textContent = snapshot.selection?.label || selectedDeviceLabel();
+        title.classList.toggle("selection-aggregate-label", (snapshot.selection?.device_count || 0) !== 1);
         document.getElementById("localActiveVariableTitle").textContent = variableLabels[activeVariable] || activeVariable;
         localFocusChart.data.labels = rows.map((row) => row.timestamp.slice(11, 16));
         localFocusChart.data.datasets[0].label = variableLabels[activeVariable] || activeVariable;
@@ -224,7 +229,7 @@
       async function refreshLocal() {
         const params = new URLSearchParams();
         selectedDeviceIds().forEach((deviceId) => params.append("device_id", deviceId));
-        const response = await fetch(`/api/local/realtime?${params.toString()}`, { headers: { "X-Requested-With": "fetch" } });
+        const response = await fetch(`/api/local/realtime?${params.toString()}`, { cache: "no-store", headers: { "X-Requested-With": "fetch" } });
         if (!response.ok) return;
         localSnapshot = await response.json();
         updateKpis(localSnapshot);

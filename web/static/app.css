@@ -425,8 +425,8 @@ body.display-mode-light .navbar-brand {
   justify-content: space-between;
   gap: 1rem;
   align-items: center;
-  padding: 1.4rem 1.6rem;
-  border-radius: 24px;
+  padding: 5px 5px 5px 18px;
+  border-radius: 20px;
   background: linear-gradient(135deg, var(--dashboard-surface), rgba(255, 255, 255, 0.03));
   border: 1px solid var(--line);
 }
@@ -434,7 +434,7 @@ body.display-mode-light .navbar-brand {
 .energy-header-copy {
   display: flex;
   align-items: center;
-  min-height: 90px;
+  min-height: 0;
 }
 
 .energy-title {
@@ -459,19 +459,32 @@ body.display-mode-light .navbar-brand {
   opacity: 0.88;
 }
 
+.energy-title-suffix {
+  padding: 0.24rem 0.72rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dashboard-accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dashboard-accent) 28%, transparent);
+  font-size: 0.34em;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .energy-header-brand {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  min-width: 260px;
-  min-height: 90px;
+  min-width: 280px;
+  min-height: 0;
 }
 
 .energy-header-logo {
   display: none;
-  width: 100%;
-  max-width: 432px;
-  max-height: 160px;
+  width: auto;
+  max-width: 520px;
+  height: 94px;
+  max-height: 94px;
   object-fit: contain;
 }
 
@@ -718,6 +731,53 @@ body.display-mode-light .btn-outline-light:hover {
   background: rgba(255,255,255,0.04);
   color: var(--text);
   font-weight: 700;
+}
+
+.toolbar-summary-stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+
+.toolbar-summary-stack small {
+  color: #c7d9de;
+  font-size: 0.82rem;
+}
+
+.signal-toggle-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.signal-toggle-chip {
+  position: relative;
+  display: inline-flex;
+}
+
+.signal-toggle-chip input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.signal-toggle-chip span {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.62rem 0.92rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  color: #cfe0e5;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.signal-toggle-chip input:checked + span {
+  background: color-mix(in srgb, var(--dashboard-accent) 24%, transparent);
+  border-color: color-mix(in srgb, var(--dashboard-accent) 42%, transparent);
+  color: #f8fffb;
 }
 
 .touch-panel {
@@ -1136,6 +1196,10 @@ canvas {
   align-items: flex-end;
   gap: 0.6rem;
   flex-wrap: wrap;
+}
+
+.local-energy-title .energy-title-suffix {
+  font-size: 0.3em;
 }
 
 .local-energy-copy {
