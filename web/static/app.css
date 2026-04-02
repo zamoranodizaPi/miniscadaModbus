@@ -399,11 +399,17 @@ a {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  align-items: flex-end;
+  align-items: center;
   padding: 1.4rem 1.6rem;
   border-radius: 24px;
   background: linear-gradient(135deg, var(--dashboard-surface), rgba(255, 255, 255, 0.03));
   border: 1px solid var(--line);
+}
+
+.energy-header-copy {
+  display: flex;
+  align-items: center;
+  min-height: 90px;
 }
 
 .energy-title {
@@ -412,20 +418,33 @@ a {
   font-weight: 800;
 }
 
-.energy-copy {
-  max-width: 62ch;
-  color: #bdd1d8;
+.energy-header-brand {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 260px;
+  min-height: 90px;
 }
 
-.energy-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+.energy-header-logo {
+  display: none;
+  width: 100%;
+  max-width: 240px;
+  max-height: 88px;
+  object-fit: contain;
+}
+
+.logo-mode-light .energy-header-logo-light {
+  display: block;
+}
+
+.logo-mode-dark .energy-header-logo-dark {
+  display: block;
 }
 
 .energy-toolbar {
   display: grid;
-  grid-template-columns: 2.2fr 1fr 1fr 2.2fr;
+  grid-template-columns: 1.4fr 1fr 1fr 2.2fr;
   gap: 1rem;
   background: var(--dashboard-panel);
 }
@@ -438,10 +457,6 @@ a {
 
 .toolbar-group.wide {
   min-width: 0;
-}
-
-.energy-select {
-  min-height: 124px;
 }
 
 .tab-toggle-grid {
@@ -593,6 +608,25 @@ a {
   color: #04141a;
 }
 
+.dropdown-menu-dark {
+  background: rgba(7, 18, 24, 0.97);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dropdown-menu-dark .dropdown-item {
+  color: var(--text);
+}
+
+.dropdown-menu-dark .dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.device-variable-editor {
+  padding: 1.25rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
 @media (max-width: 1100px) {
   .energy-toolbar {
     grid-template-columns: 1fr 1fr;
@@ -611,6 +645,11 @@ a {
   .energy-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .energy-header-brand {
+    justify-content: flex-start;
+    min-width: 0;
   }
 }
 

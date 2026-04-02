@@ -141,7 +141,11 @@ def create_app() -> Flask:
     def device_edit(device_id: int):
         with session_scope() as session:
             device = session.get(Device, device_id)
-            if request.method == "POST":
+            editing_variable_id = get_optional_int(request.args.get("edit_variable"))
+            editing_variable = session.get(Variable, editing_variable_id) if editing_variable_id else None
+            if editing_variable and editing_variable.device_id != device.id:
+                editing_variable = None
+            if request.method == "POST" and request.form.get("form_kind", "device") == "device":
                 device.name = request.form["name"].strip()
                 device.ip = request.form["ip"].strip()
                 device.port = int(request.form.get("port", 502))
@@ -151,7 +155,48 @@ def create_app() -> Flask:
                 device.enabled = "enabled" in request.form
                 session.add(device)
                 return redirect(url_for("devices"))
-        return render_template("device_form.html", device=device, default_poll_interval=device.poll_interval)
+            if request.method == "POST" and request.form.get("form_kind") == "variable":
+                variable_id = get_optional_int(request.form.get("variable_id"))
+                if variable_id:
+                    variable = session.get(Variable, variable_id)
+                    if variable is None or variable.device_id != device.id:
+                        abort(404)
+                else:
+                    variable = Variable(device_id=device.id)
+                updated = build_variable_from_form(request.form, forced_device_id=device.id)
+                variable.device_id = updated.device_id
+                variable.name = updated.name
+                variable.address = updated.address
+                variable.function_code = updated.function_code
+                variable.data_type = updated.data_type
+                variable.register_count = updated.register_count
+                variable.scale = updated.scale
+                variable.offset = updated.offset
+                variable.byte_order = updated.byte_order
+                variable.word_order = updated.word_order
+                variable.enabled = updated.enabled
+                session.add(variable)
+                flash("Variable guardada", "success")
+                return redirect(url_for("device_edit", device_id=device.id))
+            variables = session.scalars(select(Variable).where(Variable.device_id == device.id).order_by(Variable.name)).all()
+        return render_template(
+            "device_form.html",
+            device=device,
+            default_poll_interval=device.poll_interval,
+            device_variables=variables,
+            editing_variable=editing_variable,
+        )
+
+    @app.route("/devices/<int:device_id>/variables/<int:variable_id>/delete", methods=["POST"])
+    @login_required
+    def device_variable_delete(device_id: int, variable_id: int):
+        with session_scope() as session:
+            variable = session.get(Variable, variable_id)
+            if variable is None or variable.device_id != device_id:
+                abort(404)
+            session.delete(variable)
+        flash("Variable eliminada", "success")
+        return redirect(url_for("device_edit", device_id=device_id))
 
     @app.route("/devices/<int:device_id>/delete", methods=["POST"])
     @login_required
@@ -174,10 +219,11 @@ def create_app() -> Flask:
     def variable_new():
         with session_scope() as session:
             devices = session.scalars(select(Device).order_by(Device.name)).all()
+            selected_device_id = get_optional_int(request.args.get("device_id"))
             if request.method == "POST":
                 session.add(build_variable_from_form(request.form))
                 return redirect(url_for("variables"))
-        return render_template("variable_form.html", variable=None, devices=devices)
+        return render_template("variable_form.html", variable=None, devices=devices, selected_device_id=selected_device_id)
 
     @app.route("/variables/<int:variable_id>/edit", methods=["GET", "POST"])
     @login_required
@@ -214,9 +260,13 @@ def create_app() -> Flask:
     @login_required
     def app_settings():
         with session_scope() as session:
+            dashboard_preferences = load_dashboard_preferences(session)
             if request.method == "POST":
                 upsert_setting(session, "default_poll_interval", request.form["default_poll_interval"])
                 upsert_setting(session, "daemon_reload_interval", request.form["daemon_reload_interval"])
+                dashboard_preferences["theme"] = request.form.get("dashboard_theme", dashboard_preferences["theme"])
+                dashboard_preferences["refresh_seconds"] = int(request.form.get("dashboard_refresh_seconds", dashboard_preferences["refresh_seconds"]))
+                upsert_setting(session, "dashboard_preferences", json_dumps(dashboard_preferences))
                 if request.form.get("new_password"):
                     user = session.get(User, current_user.id)
                     user.password_hash = hash_password(request.form["new_password"])
@@ -229,7 +279,7 @@ def create_app() -> Flask:
                     select(Setting).where(Setting.key.in_(["default_poll_interval", "daemon_reload_interval"]))
                 ).all()
             }
-        return render_template("settings.html", values=values)
+        return render_template("settings.html", values=values, dashboard_preferences=dashboard_preferences)
 
     @app.route("/readings")
     @login_required
@@ -369,9 +419,9 @@ def create_app() -> Flask:
     return app
 
 
-def build_variable_from_form(form) -> Variable:
+def build_variable_from_form(form, forced_device_id: int | None = None) -> Variable:
     return Variable(
-        device_id=int(form["device_id"]),
+        device_id=forced_device_id if forced_device_id is not None else int(form["device_id"]),
         name=form["name"].strip(),
         address=int(form["address"]),
         function_code=form["function_code"],

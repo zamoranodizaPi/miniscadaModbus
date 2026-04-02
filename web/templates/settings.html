@@ -11,6 +11,22 @@
     <input class="form-control" name="daemon_reload_interval" type="number" value="{{ values.get('daemon_reload_interval', '5') }}" required>
   </div>
   <div class="col-md-4">
+    <label class="form-label">Color scheme dashboard</label>
+    <select class="form-select" name="dashboard_theme">
+      {% for theme in ['orange', 'blue', 'green', 'black', 'gray'] %}
+      <option value="{{ theme }}" {% if dashboard_preferences.theme == theme %}selected{% endif %}>{{ theme|capitalize }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Refresh dashboard</label>
+    <select class="form-select" name="dashboard_refresh_seconds">
+      {% for seconds in [5, 10, 15] %}
+      <option value="{{ seconds }}" {% if dashboard_preferences.refresh_seconds == seconds %}selected{% endif %}>{{ seconds }} s</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
     <label class="form-label">Nueva contraseña</label>
     <input class="form-control" name="new_password" type="password">
   </div>

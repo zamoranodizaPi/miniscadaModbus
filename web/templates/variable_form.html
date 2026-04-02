@@ -10,7 +10,7 @@
     <label class="form-label">Dispositivo</label>
     <select class="form-select" name="device_id" required>
       {% for device in devices %}
-      <option value="{{ device.id }}" {% if variable and variable.device_id == device.id %}selected{% endif %}>{{ device.name }}</option>
+      <option value="{{ device.id }}" {% if (variable and variable.device_id == device.id) or (not variable and selected_device_id == device.id) %}selected{% endif %}>{{ device.name }}</option>
       {% endfor %}
     </select>
   </div>

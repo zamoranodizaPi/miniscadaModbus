@@ -2,6 +2,7 @@
 {% block content %}
 <h1 class="h3 mb-3">{{ 'Editar dispositivo' if device else 'Nuevo dispositivo' }}</h1>
 <form method="post" class="row g-3">
+  <input type="hidden" name="form_kind" value="device">
   <div class="col-md-6">
     <label class="form-label">Nombre</label>
     <input class="form-control" name="name" value="{{ device.name if device else '' }}" required>
@@ -34,4 +35,128 @@
     <button class="btn btn-primary" type="submit">Guardar</button>
   </div>
 </form>
+
+{% if device %}
+<section class="panel-card mt-4">
+  <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+    <div>
+      <p class="panel-kicker mb-2">Device Variables</p>
+      <h2 class="panel-title mb-0">Variables de {{ device.name }}</h2>
+    </div>
+    <a class="btn btn-outline-light" href="{{ url_for('device_edit', device_id=device.id) }}">Nueva variable</a>
+  </div>
+  <div class="table-responsive mb-4">
+    <table class="table table-striped align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Dirección</th>
+          <th>Función</th>
+          <th>Tipo</th>
+          <th>Escala</th>
+          <th>Activa</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for variable in device_variables %}
+        <tr>
+          <td>{{ variable.name }}</td>
+          <td>{{ variable.address }}</td>
+          <td>{{ variable.function_code }}</td>
+          <td>{{ variable.data_type }}</td>
+          <td>{{ variable.scale }} / {{ variable.offset }}</td>
+          <td>{{ 'Sí' if variable.enabled else 'No' }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('device_edit', device_id=device.id, edit_variable=variable.id) }}">Editar</a>
+            <form method="post" action="{{ url_for('device_variable_delete', device_id=device.id, variable_id=variable.id) }}" class="d-inline">
+              <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-secondary">Este dispositivo todavía no tiene variables configuradas.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="device-variable-editor">
+    <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+      <div>
+        <p class="panel-kicker mb-2">Inline Editor</p>
+        <h3 class="panel-title mb-0">{{ 'Editar variable' if editing_variable else 'Nueva variable' }}</h3>
+      </div>
+      {% if editing_variable %}
+      <a class="btn btn-sm btn-outline-light" href="{{ url_for('device_edit', device_id=device.id) }}">Cancelar</a>
+      {% endif %}
+    </div>
+    <form method="post" class="row g-3">
+      <input type="hidden" name="form_kind" value="variable">
+      <input type="hidden" name="variable_id" value="{{ editing_variable.id if editing_variable else '' }}">
+      <div class="col-md-6">
+        <label class="form-label">Nombre</label>
+        <input class="form-control" name="name" value="{{ editing_variable.name if editing_variable else '' }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Dirección</label>
+        <input class="form-control" name="address" type="number" value="{{ editing_variable.address if editing_variable else 0 }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Cantidad de registros</label>
+        <input class="form-control" name="register_count" type="number" value="{{ editing_variable.register_count if editing_variable else 1 }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Función</label>
+        <select class="form-select" name="function_code">
+          {% for option in ['coil', 'discrete_input', 'holding_register', 'input_register'] %}
+          <option value="{{ option }}" {% if editing_variable and editing_variable.function_code == option %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Tipo de dato</label>
+        <select class="form-select" name="data_type">
+          {% for option in ['int16', 'uint16', 'int32', 'uint32', 'float32', 'int64', 'uint64', 'float64'] %}
+          <option value="{{ option }}" {% if editing_variable and editing_variable.data_type == option %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Escala</label>
+        <input class="form-control" name="scale" type="number" step="any" value="{{ editing_variable.scale if editing_variable else 1 }}" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Offset</label>
+        <input class="form-control" name="offset" type="number" step="any" value="{{ editing_variable.offset if editing_variable else 0 }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Byte order</label>
+        <select class="form-select" name="byte_order">
+          {% for option in ['big', 'little'] %}
+          <option value="{{ option }}" {% if editing_variable and editing_variable.byte_order == option %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Word order</label>
+        <select class="form-select" name="word_order">
+          {% for option in ['big', 'little'] %}
+          <option value="{{ option }}" {% if editing_variable and editing_variable.word_order == option %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 form-check ms-2">
+        <input class="form-check-input" id="variable-enabled" name="enabled" type="checkbox" {% if not editing_variable or editing_variable.enabled %}checked{% endif %}>
+        <label class="form-check-label" for="variable-enabled">Activa</label>
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary" type="submit">Guardar variable</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

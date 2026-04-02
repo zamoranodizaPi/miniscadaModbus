@@ -1,44 +1,43 @@
 {% extends "base.html" %}
-{% block title %}Energy Management Dashboard{% endblock %}
+{% block title %}Energy Management{% endblock %}
 {% block content %}
 <section class="energy-page" data-theme="{{ preferences.theme }}" data-logo-mode="dark">
   <header class="energy-header">
-    <div>
-      <p class="eyebrow mb-2">Enterprise Energy</p>
-      <h1 class="energy-title">Energy Management Dashboard</h1>
-      <p class="energy-copy mb-0">KPIs, contribución por sector, fuentes energéticas y tendencias en tiempo real optimizadas para navegación touch 1024x600.</p>
+    <div class="energy-header-copy">
+      <h1 class="energy-title">Energy Management</h1>
     </div>
-    <div class="energy-actions">
-      <a class="btn btn-outline-light" href="{{ url_for('energy_report_export', period='daily') }}">Export Daily CSV</a>
-      <a class="btn btn-accent" href="{{ url_for('readings') }}">Open History</a>
+    <div class="energy-header-brand">
+      <img class="energy-header-logo energy-header-logo-light" src="{{ url_for('static', filename='branding/logo_light.png') }}" alt="Logo light" onerror="this.style.display='none'">
+      <img class="energy-header-logo energy-header-logo-dark" src="{{ url_for('static', filename='branding/logo_dark.png') }}" alt="Logo dark" onerror="this.style.display='none'">
     </div>
   </header>
 
   <section class="energy-toolbar panel-card">
     <div class="toolbar-group">
       <label class="form-label">Devices</label>
-      <select id="deviceSelect" class="form-select energy-select" multiple size="4">
+      <select id="deviceSelect" class="form-select">
+        <option value="" {% if not selected_device_ids %}selected{% endif %}>Todos</option>
         {% for device in devices %}
         <option value="{{ device.id }}" {% if device.id in selected_device_ids %}selected{% endif %}>{{ device.name }}</option>
         {% endfor %}
       </select>
-      <small class="text-secondary">Sin selección equivale a “Todos”.</small>
     </div>
     <div class="toolbar-group">
-      <label class="form-label">Color Scheme</label>
-      <select id="themeSelect" class="form-select">
-        {% for theme in ['orange', 'blue', 'green', 'black', 'gray'] %}
-        <option value="{{ theme }}" {% if preferences.theme == theme %}selected{% endif %}>{{ theme|capitalize }}</option>
-        {% endfor %}
-      </select>
+      <label class="form-label">Export</label>
+      <div class="dropdown">
+        <button class="btn btn-outline-light dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          Export
+        </button>
+        <ul class="dropdown-menu dropdown-menu-dark w-100">
+          <li><a class="dropdown-item" href="{{ url_for('energy_report_export', period='daily') }}">Daily CSV</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('readings_export') }}">Readings CSV</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('readings') }}">Open History</a></li>
+        </ul>
+      </div>
     </div>
     <div class="toolbar-group">
-      <label class="form-label">Refresh</label>
-      <select id="refreshSelect" class="form-select">
-        {% for seconds in [5, 10, 15] %}
-        <option value="{{ seconds }}" {% if preferences.refresh_seconds == seconds %}selected{% endif %}>{{ seconds }} s</option>
-        {% endfor %}
-      </select>
+      <label class="form-label">Configuration</label>
+      <a class="btn btn-outline-light" href="{{ url_for('app_settings') }}">Open Configuration</a>
     </div>
     <div class="toolbar-group wide">
       <label class="form-label">Visible Tabs</label>
@@ -236,7 +235,8 @@
   let refreshHandle = null;
 
   function selectedDeviceIds() {
-    return Array.from(document.getElementById("deviceSelect").selectedOptions).map((option) => option.value);
+    const value = document.getElementById("deviceSelect").value;
+    return value ? [value] : [];
   }
 
   function aggregated(rows, key) {
@@ -349,6 +349,7 @@
     const lightThemes = new Set(["gray"]);
     document.body.classList.toggle("logo-mode-light", lightThemes.has(themeName));
     document.body.classList.toggle("logo-mode-dark", !lightThemes.has(themeName));
+    energyPage.dataset.logoMode = lightThemes.has(themeName) ? "light" : "dark";
   }
 
   function syncTabVisibility() {
@@ -403,8 +404,8 @@
 
   async function persistPreferences() {
     const payload = {
-      theme: document.getElementById("themeSelect").value,
-      refresh_seconds: Number(document.getElementById("refreshSelect").value),
+      theme: initialPreferences.theme,
+      refresh_seconds: Number(initialPreferences.refresh_seconds),
       visible_tabs: syncTabVisibility()
     };
     await fetch("/api/dashboard/preferences", {
@@ -412,9 +413,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    applyTheme(payload.theme);
-    refreshCharts(currentSnapshot, payload.theme);
-    resetRefreshLoop();
+    initialPreferences.visible_tabs = payload.visible_tabs;
   }
 
   async function refreshRealtime() {
@@ -427,12 +426,12 @@
     updateKpis(snapshot);
     updateDeviceTable(snapshot.devices);
     updateLatest(snapshot.latest_rows);
-    refreshCharts(snapshot, document.getElementById("themeSelect").value);
+    refreshCharts(snapshot, initialPreferences.theme);
   }
 
   function resetRefreshLoop() {
     if (refreshHandle) clearInterval(refreshHandle);
-    refreshHandle = setInterval(refreshRealtime, Number(document.getElementById("refreshSelect").value) * 1000);
+    refreshHandle = setInterval(refreshRealtime, Number(initialPreferences.refresh_seconds) * 1000);
   }
 
   applyTheme(initialPreferences.theme);
@@ -440,8 +439,6 @@
   syncTabVisibility();
   resetRefreshLoop();
 
-  document.getElementById("themeSelect").addEventListener("change", persistPreferences);
-  document.getElementById("refreshSelect").addEventListener("change", persistPreferences);
   document.getElementById("deviceSelect").addEventListener("change", refreshRealtime);
   document.querySelectorAll(".tab-toggle").forEach((input) => input.addEventListener("change", persistPreferences));
 </script>
