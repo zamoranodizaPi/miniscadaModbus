@@ -3,40 +3,21 @@
 {% set total_consumption_display = format_compact_metric(snapshot.kpis.total_consumption_kwh, 'kWh', 2) %}
 {% set avg_voltage_display = format_compact_metric(snapshot.kpis.avg_voltage_v, 'V', 2) %}
 {% set avg_current_display = format_compact_metric(snapshot.kpis.avg_current_a, 'A', 2) %}
+{% set selection_power_display = format_compact_metric(snapshot.selection.power_kw, 'kW', 2) %}
+{% set selection_energy_display = format_compact_metric(snapshot.selection.energy_kwh, 'kWh', 2) %}
+{% set selection_voltage_display = format_compact_metric(snapshot.selection.avg_voltage_v, 'V', 2) %}
+{% set selection_current_display = format_compact_metric(snapshot.selection.avg_current_a, 'A', 2) %}
 {% block content %}
 <section class="energy-page" data-theme="{{ preferences.theme }}" data-mode="{{ preferences.mode }}" data-logo-mode="{{ preferences.mode }}">
   <header class="energy-header">
     <div class="energy-header-copy">
-      <h1 class="energy-title">Energy Management</h1>
+      <h1 class="energy-title"><span class="energy-title-main">Energy Management</span><span class="energy-title-by">by Sieza</span></h1>
     </div>
     <div class="energy-header-brand">
       <img class="energy-header-logo energy-header-logo-light" src="{{ url_for('static', filename='branding/logo_light.png') }}" alt="Logo light" onerror="this.style.display='none'">
       <img class="energy-header-logo energy-header-logo-dark" src="{{ url_for('static', filename='branding/logo_dark.png') }}" alt="Logo dark" onerror="this.style.display='none'">
     </div>
   </header>
-
-  <section class="energy-toolbar panel-card">
-    <div class="toolbar-group">
-      <label class="form-label">Devices</label>
-      <select id="deviceSelect" class="form-select">
-        <option value="" {% if not selected_device_ids %}selected{% endif %}>Todos</option>
-        {% for device in devices %}
-        <option value="{{ device.id }}" {% if device.id in selected_device_ids %}selected{% endif %}>{{ device.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="toolbar-group wide">
-      <label class="form-label">Visible Tabs</label>
-      <div class="tab-toggle-grid">
-        {% for tab_id, label in [('consumption','Consumption'),('sales','Sales'),('sources','Sources'),('costs','Production Costs')] %}
-        <label class="toggle-chip">
-          <input class="tab-toggle" type="checkbox" value="{{ tab_id }}" {% if tab_id in preferences.visible_tabs %}checked{% endif %}>
-          <span>{{ label }}</span>
-        </label>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
 
   <section class="energy-scroll-wrap">
     <div class="energy-grid">
@@ -71,6 +52,62 @@
         <small data-kpi-unit="online_devices">of {{ snapshot.kpis.device_count }}</small>
       </article>
     </div>
+
+    <div class="energy-grid selection-grid">
+      <article class="kpi-energy-card selection-highlight">
+        <span>Selected Device</span>
+        <strong data-selection="label">{{ snapshot.selection.label }}</strong>
+        <small data-selection-unit="label">{{ snapshot.selection.device_count }} device(s)</small>
+      </article>
+      <article class="kpi-energy-card">
+        <span>Selected Power</span>
+        <strong data-selection="power_kw">{{ selection_power_display[0] }}</strong>
+        <small data-selection-unit="power_kw">{{ selection_power_display[1] }}</small>
+      </article>
+      <article class="kpi-energy-card">
+        <span>Selected Energy</span>
+        <strong data-selection="energy_kwh">{{ selection_energy_display[0] }}</strong>
+        <small data-selection-unit="energy_kwh">{{ selection_energy_display[1] }}</small>
+      </article>
+      <article class="kpi-energy-card">
+        <span>Selected Voltage</span>
+        <strong data-selection="avg_voltage_v">{{ selection_voltage_display[0] }}</strong>
+        <small data-selection-unit="avg_voltage_v">{{ selection_voltage_display[1] }}</small>
+      </article>
+      <article class="kpi-energy-card">
+        <span>Selected Current</span>
+        <strong data-selection="avg_current_a">{{ selection_current_display[0] }}</strong>
+        <small data-selection-unit="avg_current_a">{{ selection_current_display[1] }}</small>
+      </article>
+      <article class="kpi-energy-card">
+        <span>Selected Alerts</span>
+        <strong data-selection="active_alerts">{{ snapshot.selection.active_alerts }}</strong>
+        <small data-selection-unit="active_alerts">{{ "%.1f"|format(snapshot.selection.utilization_pct) }}% utilization</small>
+      </article>
+    </div>
+
+    <section class="energy-toolbar panel-card">
+      <div class="toolbar-group">
+        <label class="form-label">Devices</label>
+        <select id="deviceSelect" class="form-select">
+          <option value="" {% if not selected_device_ids %}selected{% endif %}>Todos</option>
+          {% for device in devices %}
+          <option value="{{ device.id }}" {% if device.id in selected_device_ids %}selected{% endif %}>{{ device.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="toolbar-group wide">
+        <label class="form-label">Visible Tabs</label>
+        <div class="tab-toggle-grid">
+          {% for tab_id, label in [('consumption','Consumption'),('sales','Sales'),('sources','Sources'),('costs','Production Costs')] %}
+          <label class="toggle-chip">
+            <input class="tab-toggle" type="checkbox" value="{{ tab_id }}" {% if tab_id in preferences.visible_tabs %}checked{% endif %}>
+            <span>{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
 
     <div class="energy-content-grid">
       <section class="panel-card touch-panel chart-tabs-panel">
@@ -219,6 +256,7 @@
   const charts = {};
   let currentSnapshot = initialSnapshot;
   let refreshHandle = null;
+  let realtimeController = null;
 
   function formatNumber(value, decimals = 2) {
     return new Intl.NumberFormat("en-US", {
@@ -247,6 +285,12 @@
   function selectedDeviceIds() {
     const value = document.getElementById("deviceSelect").value;
     return value ? [value] : [];
+  }
+
+  function selectedDeviceLabel() {
+    const select = document.getElementById("deviceSelect");
+    const option = select.selectedOptions[0];
+    return option && option.value ? option.textContent : "All Devices";
   }
 
   function aggregated(rows, key) {
@@ -441,6 +485,30 @@
     if (onlineUnit) onlineUnit.textContent = `of ${snapshot.kpis.device_count}`;
   }
 
+  function updateSelectionKpis(snapshot) {
+    const selection = snapshot.selection || {};
+    const formats = {
+      power_kw: formatMetric(selection.power_kw, "kW"),
+      energy_kwh: formatMetric(selection.energy_kwh, "kWh"),
+      avg_voltage_v: formatMetric(selection.avg_voltage_v, "V"),
+      avg_current_a: formatMetric(selection.avg_current_a, "A")
+    };
+    const labelNode = document.querySelector('[data-selection="label"]');
+    const labelUnitNode = document.querySelector('[data-selection-unit="label"]');
+    if (labelNode) labelNode.textContent = selection.label || selectedDeviceLabel();
+    if (labelUnitNode) labelUnitNode.textContent = `${selection.device_count || 0} device(s)`;
+    Object.entries(formats).forEach(([key, formatted]) => {
+      const node = document.querySelector(`[data-selection="${key}"]`);
+      const unitNode = document.querySelector(`[data-selection-unit="${key}"]`);
+      if (node) node.textContent = formatted.value;
+      if (unitNode) unitNode.textContent = formatted.unit;
+    });
+    const alertNode = document.querySelector('[data-selection="active_alerts"]');
+    const alertUnitNode = document.querySelector('[data-selection-unit="active_alerts"]');
+    if (alertNode) alertNode.textContent = formatNumber(selection.active_alerts || 0, 0);
+    if (alertUnitNode) alertUnitNode.textContent = `${formatNumber(selection.utilization_pct || 0, 1)}% utilization`;
+  }
+
   function refreshCharts(snapshot, themeName) {
     const payloads = chartPayloads(snapshot, themeName);
     Object.entries(payloads).forEach(([key, payload]) => {
@@ -473,14 +541,27 @@
   async function refreshRealtime() {
     const params = new URLSearchParams();
     selectedDeviceIds().forEach((deviceId) => params.append("device_id", deviceId));
-    const response = await fetch(`/api/realtime?${params.toString()}`);
+    if (realtimeController) realtimeController.abort();
+    realtimeController = new AbortController();
+    const response = await fetch(`/api/realtime?${params.toString()}`, { cache: "no-store", signal: realtimeController.signal });
     if (!response.ok) return;
     const snapshot = await response.json();
     currentSnapshot = snapshot;
     updateKpis(snapshot);
+    updateSelectionKpis(snapshot);
     updateDeviceTable(snapshot.devices);
     updateLatest(snapshot.latest_rows);
     refreshCharts(snapshot, initialPreferences.theme);
+    const url = params.toString() ? `/?${params.toString()}` : "/";
+    window.history.replaceState({}, "", url);
+  }
+
+  function handleDeviceChange() {
+    const labelNode = document.querySelector('[data-selection="label"]');
+    if (labelNode) labelNode.textContent = selectedDeviceLabel();
+    refreshRealtime().catch((error) => {
+      if (error.name !== "AbortError") console.error(error);
+    });
   }
 
   function resetRefreshLoop() {
@@ -493,9 +574,11 @@
   ensureCharts(initialSnapshot, initialPreferences.theme);
   syncTabVisibility();
   updateKpis(initialSnapshot);
+  updateSelectionKpis(initialSnapshot);
   resetRefreshLoop();
 
-  document.getElementById("deviceSelect").addEventListener("change", refreshRealtime);
+  document.getElementById("deviceSelect").addEventListener("input", handleDeviceChange);
+  document.getElementById("deviceSelect").addEventListener("change", handleDeviceChange);
   document.querySelectorAll(".tab-toggle").forEach((input) => input.addEventListener("change", persistPreferences));
 </script>
 {% endblock %}

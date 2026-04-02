@@ -441,6 +441,22 @@ body.display-mode-light .navbar-brand {
   margin: 0;
   font-size: clamp(1.9rem, 3vw, 2.8rem);
   font-weight: 800;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.energy-title-main {
+  line-height: 1;
+}
+
+.energy-title-by {
+  font-size: 0.5em;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  opacity: 0.88;
 }
 
 .energy-header-brand {
@@ -525,6 +541,14 @@ body.display-mode-light .navbar-brand {
   gap: 0.9rem;
   min-width: 980px;
   margin-bottom: 1rem;
+}
+
+.selection-grid {
+  margin-bottom: 1rem;
+}
+
+.selection-highlight {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--dashboard-accent-2) 26%, transparent), var(--dashboard-panel));
 }
 
 .kpi-energy-card {
@@ -1001,6 +1025,10 @@ canvas {
   font-size: 2.35rem;
   font-weight: 800;
   line-height: 1;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .local-energy-copy {

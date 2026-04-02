@@ -18,7 +18,7 @@
       <section class="local-energy-header">
         <div>
           <div class="local-tag">Embedded Enterprise Energy</div>
-          <h1 class="local-energy-title">Energy Management</h1>
+          <h1 class="local-energy-title"><span class="energy-title-main">Energy Management</span><span class="energy-title-by">by Sieza</span></h1>
         </div>
         <div class="local-energy-header-right">
           <div class="app-logo-corner kiosk-logo">
@@ -75,7 +75,7 @@
           <div class="local-focus-chart-area">
             <div class="local-energy-panel-head mb-2">
               <div>
-                <span>Focused Analysis</span>
+                <span id="localSelectedDeviceTitle">All Devices</span>
                 <strong id="localActiveVariableTitle">Power</strong>
               </div>
               <small>3 hour window</small>
@@ -146,6 +146,13 @@
         return Array.from(document.getElementById("localDeviceSelect").selectedOptions).map((option) => option.value);
       }
 
+      function selectedDeviceLabel() {
+        const names = Array.from(document.getElementById("localDeviceSelect").selectedOptions).map((option) => option.textContent);
+        if (!names.length) return "All Devices";
+        if (names.length === 1) return names[0];
+        return `${names.length} Selected Devices`;
+      }
+
       function formatNumber(value, decimals = 1) {
         return new Intl.NumberFormat("en-US", {
           minimumFractionDigits: decimals,
@@ -201,6 +208,7 @@
 
       function updateFocusChart(snapshot) {
         const rows = snapshot.variable_series[activeVariable] || [];
+        document.getElementById("localSelectedDeviceTitle").textContent = selectedDeviceLabel();
         document.getElementById("localActiveVariableTitle").textContent = variableLabels[activeVariable] || activeVariable;
         localFocusChart.data.labels = rows.map((row) => row.timestamp.slice(11, 16));
         localFocusChart.data.datasets[0].label = variableLabels[activeVariable] || activeVariable;
@@ -229,6 +237,7 @@
 
       document.getElementById("localDeviceSelect").addEventListener("change", refreshLocal);
       updateKpis(localSnapshot);
+      updateFocusChart(localSnapshot);
       setInterval(refreshLocal, 8000);
     </script>
   </body>

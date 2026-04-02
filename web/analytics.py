@@ -186,6 +186,12 @@ def build_dashboard_snapshot(session, device_ids: list[int] | None = None) -> di
     sector_mix = build_sector_mix(device_cards)
     total_sales = round(sum(item["sales_amount"] for item in sales_series), 2)
     avg_cost = round(sum(item["avg_cost"] for item in costs_series) / len(costs_series), 2) if costs_series else 0.0
+    selection_label = "All Devices"
+    if device_ids and len(devices) == 1:
+        selection_label = devices[0].name
+    elif device_ids:
+        selection_label = f"{len(devices)} Selected Devices"
+    selection_utilization = round(sum(item["utilization_pct"] for item in device_cards) / len(device_cards), 1) if device_cards else 0.0
 
     return {
         "kpis": {
@@ -205,6 +211,16 @@ def build_dashboard_snapshot(session, device_ids: list[int] | None = None) -> di
             "total_consumption_kwh": round(total_energy, 2),
             "total_sales_usd": total_sales,
             "avg_production_cost_usd": avg_cost,
+        },
+        "selection": {
+            "label": selection_label,
+            "device_count": len(devices),
+            "power_kw": round(total_power, 2),
+            "energy_kwh": round(total_energy, 2),
+            "avg_voltage_v": round(sum(voltage_values) / len(voltage_values), 2) if voltage_values else 0.0,
+            "avg_current_a": round(sum(current_values) / len(current_values), 2) if current_values else 0.0,
+            "active_alerts": len(alerts),
+            "utilization_pct": selection_utilization,
         },
         "devices": sorted(device_cards, key=lambda item: item["power_kw"], reverse=True),
         "energy_breakdown": sorted(energy_breakdown, key=lambda item: item["energy_kwh"], reverse=True),
