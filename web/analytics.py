@@ -23,6 +23,12 @@ PRIMARY_VARIABLES = {
     "frecuencia_hz",
     "factor_potencia",
 }
+KIOSK_VARIABLE_TABS = [
+    ("potencia_activa_kw", "Power"),
+    ("energia_acumulada_kwh", "Energy"),
+    ("voltaje_ll_v", "Voltage"),
+    ("corriente_total_a", "Current"),
+]
 
 
 @dataclass(slots=True)
@@ -200,6 +206,7 @@ def build_dashboard_snapshot(session, device_ids: list[int] | None = None) -> di
         "devices": sorted(device_cards, key=lambda item: item["power_kw"], reverse=True),
         "energy_breakdown": sorted(energy_breakdown, key=lambda item: item["energy_kwh"], reverse=True),
         "trend": trend_series,
+        "variable_series": build_variable_timeseries_bundle(session, device_ids=device_ids, hours=3),
         "sales_trend": sales_series,
         "costs_trend": costs_series,
         "source_mix": source_mix,
@@ -231,6 +238,41 @@ def build_power_timeseries(session, device_ids: list[int] | None = None, hours: 
         stmt = stmt.where(Device.id.in_(device_ids))
     rows = session.execute(stmt).all()
     return [{"timestamp": bucket_value, "power_kw": round(float(power_kw or 0.0), 2)} for bucket_value, power_kw in rows]
+
+
+def build_variable_timeseries_bundle(session, device_ids: list[int] | None = None, hours: int = 3) -> dict[str, list[dict]]:
+    bundle: dict[str, list[dict]] = {}
+    for variable_name, _label in KIOSK_VARIABLE_TABS:
+        bundle[variable_name] = build_variable_timeseries(session, variable_name=variable_name, device_ids=device_ids, hours=hours)
+    return bundle
+
+
+def build_variable_timeseries(
+    session,
+    variable_name: str,
+    device_ids: list[int] | None = None,
+    hours: int = 3,
+) -> list[dict]:
+    since = utcnow() - timedelta(hours=hours)
+    bucket = func.strftime("%Y-%m-%dT%H:%M:00", Reading.timestamp)
+    aggregate = func.avg(Reading.value) if variable_name in {VOLTAGE_VARIABLE, CURRENT_VARIABLE} else func.sum(Reading.value)
+    stmt = (
+        select(bucket.label("bucket"), aggregate.label("value"))
+        .join(Reading.variable)
+        .join(Variable.device)
+        .where(
+            Reading.timestamp >= since,
+            Variable.name == variable_name,
+            Variable.enabled.is_(True),
+            Device.enabled.is_(True),
+        )
+        .group_by("bucket")
+        .order_by("bucket")
+    )
+    if device_ids:
+        stmt = stmt.where(Device.id.in_(device_ids))
+    rows = session.execute(stmt).all()
+    return [{"timestamp": bucket_value, "value": round(float(value or 0.0), 2)} for bucket_value, value in rows]
 
 
 def energy_aggregate(

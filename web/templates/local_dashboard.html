@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   </head>
   <body class="local-screen energy-page logo-mode-dark" data-theme="green">
-    <main class="local-energy-shell">
+    <main class="local-energy-shell local-energy-shell--focused">
       <section class="local-energy-header">
         <div>
           <div class="local-tag">Embedded Enterprise Energy</div>
@@ -58,76 +58,35 @@
         </article>
       </section>
 
-      <section class="local-energy-main">
-        <div class="local-energy-panel wide">
-          <div class="local-energy-panel-head">
-            <div>
-              <span>Realtime Consumption</span>
-              <strong>Total Consumption</strong>
+      <section class="local-energy-focus-panel">
+        <div class="local-focus-toolbar">
+          <div class="local-focus-control">
+            <label class="form-label">Equipos</label>
+            <select id="localDeviceSelect" class="form-select local-device-select" multiple size="6">
+              {% for device in devices %}
+              <option value="{{ device.id }}" {% if device.id in selected_device_ids %}selected{% endif %}>{{ device.name }}</option>
+              {% endfor %}
+            </select>
+            <small class="text-secondary">Sin selección equivale a todos.</small>
+          </div>
+          <div class="local-focus-chart-area">
+            <div class="local-energy-panel-head mb-2">
+              <div>
+                <span>Focused Analysis</span>
+                <strong id="localActiveVariableTitle">Power</strong>
+              </div>
+              <small>3 hour window</small>
             </div>
-            <small>Last 3 hours</small>
-          </div>
-          <canvas id="localConsumptionChart"></canvas>
-        </div>
-
-        <div class="local-energy-panel narrow">
-          <div class="local-energy-panel-head">
-            <div>
-              <span>Energy Sources</span>
-              <strong>Contribution Renewable</strong>
+            <ul class="nav nav-pills energy-tab-nav local-kiosk-tabs mb-2" id="localVariableTabs" role="tablist">
+              {% for variable_name, label in kiosk_tabs %}
+              <li class="nav-item" role="presentation">
+                <button class="nav-link {% if loop.first %}active{% endif %} local-variable-tab" type="button" data-variable="{{ variable_name }}">{{ label }}</button>
+              </li>
+              {% endfor %}
+            </ul>
+            <div class="local-focus-canvas-wrap">
+              <canvas id="localFocusChart"></canvas>
             </div>
-            <small>Live mix</small>
-          </div>
-          <div class="local-donut-grid">
-            <canvas id="localSourceChart"></canvas>
-            <canvas id="localRenewableChart"></canvas>
-          </div>
-        </div>
-
-        <div class="local-energy-panel compact">
-          <div class="local-energy-panel-head">
-            <div>
-              <span>Contribution by Sector</span>
-              <strong>Consumption by Sector</strong>
-            </div>
-          </div>
-          <canvas id="localSectorChart"></canvas>
-        </div>
-      </section>
-
-      <section class="local-energy-bottom">
-        <div class="local-energy-panel compact">
-          <div class="local-energy-panel-head">
-            <div>
-              <span>Latest Readings</span>
-              <strong>Embedded Feed</strong>
-            </div>
-          </div>
-          <div id="localReadings" class="local-reading-list">
-            {% for row in snapshot.latest_rows[:8] %}
-            <div class="local-reading-item">
-              <strong>{{ row.device }} / {{ row.variable }}</strong>
-              <span>{{ row.value }} | {{ row.timestamp }}</span>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-
-        <div class="local-energy-panel compact">
-          <div class="local-energy-panel-head">
-            <div>
-              <span>Fleet Status</span>
-              <strong>Devices and Alerts</strong>
-            </div>
-          </div>
-          <div class="local-status-grid" id="localDeviceGrid">
-            {% for device in snapshot.devices[:6] %}
-            <article class="local-status-card {% if device.alarm %}danger{% elif device.maintenance %}warning{% else %}success{% endif %}">
-              <header>{{ device.name }}</header>
-              <strong>{{ "%.1f"|format(device.power_kw) }} kW</strong>
-              <footer>{{ "%.0f"|format(device.voltage_v) }} V | {{ "%.0f"|format(device.current_a) }} A</footer>
-            </article>
-            {% endfor %}
           </div>
         </div>
       </section>
@@ -136,16 +95,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script>
       let localSnapshot = {{ snapshot|tojson }};
-
-      function sourceValues(snapshot) {
-        return snapshot.source_mix.map((row) => row.value);
-      }
-
-      function renewableValues(snapshot) {
-        const total = snapshot.source_mix.reduce((sum, row) => sum + row.value, 0) || 1;
-        const renewable = snapshot.source_mix.find((row) => row.label === "Renewable")?.value || 0;
-        return [renewable, Math.max(total - renewable, 0)];
-      }
+      let activeVariable = "{{ kiosk_tabs[0][0] if kiosk_tabs else 'potencia_activa_kw' }}";
+      const variableLabels = {
+        {% for variable_name, label in kiosk_tabs %}
+        "{{ variable_name }}": "{{ label }}",
+        {% endfor %}
+      };
 
       const chartTheme = {
         accent: "#5fd08d",
@@ -154,81 +109,32 @@
         grid: "rgba(255,255,255,0.06)"
       };
 
-      const localConsumptionChart = new Chart(document.getElementById("localConsumptionChart"), {
+      const localFocusChart = new Chart(document.getElementById("localFocusChart"), {
         type: "line",
         data: {
-          labels: localSnapshot.trend.map((row) => row.timestamp.slice(11, 16)),
+          labels: (localSnapshot.variable_series[activeVariable] || []).map((row) => row.timestamp.slice(11, 16)),
           datasets: [{
-            label: "Consumption",
-            data: localSnapshot.trend.map((row) => row.power_kw),
+            label: variableLabels[activeVariable],
+            data: (localSnapshot.variable_series[activeVariable] || []).map((row) => row.value),
             borderColor: chartTheme.accent,
             backgroundColor: "rgba(95, 208, 141, 0.18)",
             fill: true,
-            tension: 0.3,
+            tension: 0.28,
             pointRadius: 0
           }]
         },
-        options: localLineOptions()
-      });
-
-      const localSourceChart = new Chart(document.getElementById("localSourceChart"), {
-        type: "doughnut",
-        data: {
-          labels: localSnapshot.source_mix.map((row) => row.label),
-          datasets: [{ data: sourceValues(localSnapshot), backgroundColor: [chartTheme.accent, chartTheme.accent2, "#ffd166"], borderWidth: 0 }]
-        },
-        options: localDonutOptions()
-      });
-
-      const localRenewableChart = new Chart(document.getElementById("localRenewableChart"), {
-        type: "doughnut",
-        data: {
-          labels: ["Renewable", "Conventional"],
-          datasets: [{ data: renewableValues(localSnapshot), backgroundColor: [chartTheme.accent, "rgba(255,255,255,0.12)"], borderWidth: 0 }]
-        },
-        options: localDonutOptions()
-      });
-
-      const localSectorChart = new Chart(document.getElementById("localSectorChart"), {
-        type: "bar",
-        data: {
-          labels: localSnapshot.sector_mix.map((row) => row.label),
-          datasets: [{ label: "Sector", data: localSnapshot.sector_mix.map((row) => row.value), backgroundColor: chartTheme.accent2, borderRadius: 8 }]
-        },
-        options: localBarOptions()
-      });
-
-      function localLineOptions() {
-        return {
+        options: {
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
             x: { ticks: { color: chartTheme.text, maxRotation: 0 }, grid: { color: chartTheme.grid } },
             y: { ticks: { color: chartTheme.text }, grid: { color: chartTheme.grid } }
           }
-        };
-      }
+        }
+      });
 
-      function localDonutOptions() {
-        return {
-          maintainAspectRatio: false,
-          plugins: { legend: { position: "bottom", labels: { color: chartTheme.text, boxWidth: 10 } } }
-        };
-      }
-
-      function localBarOptions() {
-        return {
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: chartTheme.text, maxRotation: 0, minRotation: 0 }, grid: { display: false } },
-            y: { ticks: { color: chartTheme.text }, grid: { color: chartTheme.grid } }
-          }
-        };
-      }
-
-      function syncClock() {
-        return;
+      function selectedDeviceIds() {
+        return Array.from(document.getElementById("localDeviceSelect").selectedOptions).map((option) => option.value);
       }
 
       function updateKpis(snapshot) {
@@ -238,59 +144,35 @@
         });
       }
 
-      function updateReadings(snapshot) {
-        const container = document.getElementById("localReadings");
-        container.innerHTML = snapshot.latest_rows.slice(0, 8).map((row) => `
-          <div class="local-reading-item">
-            <strong>${row.device} / ${row.variable}</strong>
-            <span>${row.value} | ${row.timestamp}</span>
-          </div>
-        `).join("");
-      }
-
-      function updateDevices(snapshot) {
-        const container = document.getElementById("localDeviceGrid");
-        container.innerHTML = snapshot.devices.slice(0, 6).map((device) => {
-          let state = "success";
-          if (device.alarm) state = "danger";
-          else if (device.maintenance) state = "warning";
-          return `
-            <article class="local-status-card ${state}">
-              <header>${device.name}</header>
-              <strong>${device.power_kw.toFixed(1)} kW</strong>
-              <footer>${device.voltage_v.toFixed(0)} V | ${device.current_a.toFixed(0)} A</footer>
-            </article>
-          `;
-        }).join("");
-      }
-
-      function updateCharts(snapshot) {
-        localConsumptionChart.data.labels = snapshot.trend.map((row) => row.timestamp.slice(11, 16));
-        localConsumptionChart.data.datasets[0].data = snapshot.trend.map((row) => row.power_kw);
-        localConsumptionChart.update();
-
-        localSourceChart.data.labels = snapshot.source_mix.map((row) => row.label);
-        localSourceChart.data.datasets[0].data = sourceValues(snapshot);
-        localSourceChart.update();
-
-        localRenewableChart.data.datasets[0].data = renewableValues(snapshot);
-        localRenewableChart.update();
-
-        localSectorChart.data.labels = snapshot.sector_mix.map((row) => row.label);
-        localSectorChart.data.datasets[0].data = snapshot.sector_mix.map((row) => row.value);
-        localSectorChart.update();
+      function updateFocusChart(snapshot) {
+        const rows = snapshot.variable_series[activeVariable] || [];
+        document.getElementById("localActiveVariableTitle").textContent = variableLabels[activeVariable] || activeVariable;
+        localFocusChart.data.labels = rows.map((row) => row.timestamp.slice(11, 16));
+        localFocusChart.data.datasets[0].label = variableLabels[activeVariable] || activeVariable;
+        localFocusChart.data.datasets[0].data = rows.map((row) => row.value);
+        localFocusChart.update("none");
       }
 
       async function refreshLocal() {
-        const response = await fetch("/api/local/realtime", { headers: { "X-Requested-With": "fetch" } });
+        const params = new URLSearchParams();
+        selectedDeviceIds().forEach((deviceId) => params.append("device_id", deviceId));
+        const response = await fetch(`/api/local/realtime?${params.toString()}`, { headers: { "X-Requested-With": "fetch" } });
         if (!response.ok) return;
         localSnapshot = await response.json();
         updateKpis(localSnapshot);
-        updateReadings(localSnapshot);
-        updateDevices(localSnapshot);
-        updateCharts(localSnapshot);
+        updateFocusChart(localSnapshot);
       }
 
+      document.querySelectorAll(".local-variable-tab").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".local-variable-tab").forEach((item) => item.classList.remove("active"));
+          button.classList.add("active");
+          activeVariable = button.dataset.variable;
+          updateFocusChart(localSnapshot);
+        });
+      });
+
+      document.getElementById("localDeviceSelect").addEventListener("change", refreshLocal);
       setInterval(refreshLocal, 8000);
     </script>
   </body>

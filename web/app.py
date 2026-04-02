@@ -15,6 +15,7 @@ from backend.security import hash_password, verify_password
 from models.entities import Device, Setting, User, Variable
 from web.analytics import (
     HistoryFilters,
+    KIOSK_VARIABLE_TABS,
     build_dashboard_snapshot,
     energy_aggregate,
     export_history_csv,
@@ -65,9 +66,11 @@ def create_app() -> Flask:
     @app.route("/local")
     def local_dashboard():
         require_local_request()
+        selected_device_ids = get_optional_int_list(request.args.getlist("device_id"))
         with session_scope() as session:
-            snapshot = build_dashboard_snapshot(session)
-        return render_template("local_dashboard.html", snapshot=snapshot)
+            snapshot = build_dashboard_snapshot(session, device_ids=selected_device_ids)
+            devices = session.scalars(select(Device).where(Device.enabled.is_(True)).order_by(Device.name)).all()
+        return render_template("local_dashboard.html", snapshot=snapshot, devices=devices, selected_device_ids=selected_device_ids, kiosk_tabs=KIOSK_VARIABLE_TABS)
 
     @app.route("/api/dashboard/preferences", methods=["GET", "POST"])
     @login_required
@@ -304,8 +307,9 @@ def create_app() -> Flask:
     @app.route("/api/local/realtime")
     def api_local_realtime():
         require_local_request()
+        device_ids = get_optional_int_list(request.args.getlist("device_id"))
         with session_scope() as session:
-            payload = build_dashboard_snapshot(session)
+            payload = build_dashboard_snapshot(session, device_ids=device_ids)
         return jsonify(payload)
 
     @app.route("/api/devices")

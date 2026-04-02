@@ -869,6 +869,10 @@ canvas {
   overflow: hidden;
 }
 
+.local-energy-shell--focused {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
 .local-energy-header,
 .local-energy-kpi,
 .local-energy-panel,
@@ -966,6 +970,57 @@ canvas {
   gap: 8px;
   min-height: 0;
   align-items: stretch;
+}
+
+.local-energy-focus-panel {
+  min-height: 0;
+  padding: 0;
+}
+
+.local-focus-toolbar {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 10px;
+  height: 100%;
+}
+
+.local-focus-control,
+.local-focus-chart-area {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(10, 27, 34, 0.9);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
+}
+
+.local-device-select {
+  flex: 1;
+  min-height: 0;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.local-kiosk-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.local-kiosk-tabs .nav-link {
+  font-size: 0.82rem;
+}
+
+.local-focus-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  padding-top: 4px;
+}
+
+.local-focus-canvas-wrap canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .local-energy-bottom {
