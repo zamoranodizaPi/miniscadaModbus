@@ -441,25 +441,33 @@ body.display-mode-light .navbar-brand {
   margin: 0;
   font-size: clamp(1.9rem, 3vw, 2.8rem);
   font-weight: 800;
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 0.65rem;
-  flex-wrap: wrap;
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  grid-template-areas:
+    "main suffix"
+    "by by";
+  align-items: end;
+  column-gap: 0.65rem;
+  row-gap: 0.15rem;
 }
 
 .energy-title-main {
+  grid-area: main;
   line-height: 1;
 }
 
 .energy-title-by {
-  font-size: 0.5em;
-  line-height: 1.15;
+  grid-area: by;
+  font-size: 0.34em;
+  line-height: 1.1;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.16em;
   opacity: 0.88;
+  text-transform: uppercase;
 }
 
 .energy-title-suffix {
+  grid-area: suffix;
   padding: 0.24rem 0.72rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--dashboard-accent) 18%, transparent);
@@ -1200,13 +1208,9 @@ canvas {
 
 .local-energy-title {
   margin: 4px 0 0;
-  font-size: 2.35rem;
+  font-size: 2.66rem;
   font-weight: 800;
   line-height: 1;
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 0.6rem;
-  flex-wrap: wrap;
 }
 
 .local-energy-title .energy-title-suffix {
